@@ -2,7 +2,6 @@ import { useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Sparkles, Wrench, ChevronRight, Shield, Droplets, Brush, Car, ArrowRight, Play } from 'lucide-react';
-import { Layout } from '@/components/Layout';
 import GoogleReviews from '@/components/GoogleReviews';
 import heroDetailing from '@/assets/hero-detailing.jpg';
 import ceramicCoating from '@/assets/ceramic-coating.jpg';
@@ -52,7 +51,7 @@ const Index = () => {
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
 
   return (
-    <Layout>
+    <div>
       {/* Hero Section with Parallax */}
       <section ref={heroRef} className="relative min-h-screen flex items-center justify-center overflow-hidden">
         {/* Parallax Background Image */}
@@ -419,7 +418,7 @@ const Index = () => {
           </motion.div>
         </div>
       </section>
-    </Layout>
+    </div>
   );
 };
 

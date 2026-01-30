@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Layout } from '@/components/Layout';
 import { Link } from 'react-router-dom';
 import { 
   Car, 
@@ -239,7 +238,7 @@ const Reservation = () => {
   };
 
   return (
-    <Layout>
+    <div>
       {/* Hero */}
       <section className="pt-32 pb-8 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-[600px] h-[400px] bg-primary/5 rounded-full blur-3xl" />
@@ -667,7 +666,7 @@ const Reservation = () => {
           </div>
         </div>
       </div>
-    </Layout>
+    </div>
   );
 };
 

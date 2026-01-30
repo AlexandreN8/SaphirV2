@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Layout } from '@/components/Layout';
 import { Eye } from 'lucide-react';
 
 // Before/After comparisons
@@ -130,7 +129,7 @@ const BeforeAfterSlider = ({ before, after, title }: { before: string; after: st
 
 const Realisations = () => {
   return (
-    <Layout>
+    <div>
       {/* Hero */}
       <section className="pt-32 pb-16 relative overflow-hidden">
         <div className="absolute top-0 left-0 w-[600px] h-[400px] bg-primary/5 rounded-full blur-3xl" />
@@ -236,7 +235,7 @@ const Realisations = () => {
           </div>
         </div>
       </section>
-    </Layout>
+    </div>
   );
 };
 

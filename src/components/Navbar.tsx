@@ -6,7 +6,7 @@ import logo from '@/assets/logo.png';
 
 const navLinks = [
   { href: '/', label: 'Accueil' },
-  { href: '/tarifs', label: 'Prestations & Tarifs' },
+  { href: '/tarifs', label: 'Prestations' },
   { href: '/realisations', label: 'Réalisations' },
   { href: '/reservation', label: 'Réservation' },
   { href: '/contact', label: 'Contact' },

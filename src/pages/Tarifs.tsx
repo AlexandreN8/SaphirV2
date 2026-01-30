@@ -1,6 +1,5 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Layout } from '@/components/Layout';
 import { Check, Sparkles, Crown, Shield, Wrench, Droplet, Disc, Gauge, Settings, ArrowRight, HelpCircle } from 'lucide-react';
 import {
   Accordion,
@@ -114,7 +113,7 @@ const mechanicServices = [
 
 const Tarifs = () => {
   return (
-    <Layout>
+    <div>
       {/* Hero */}
       <section className="pt-32 pb-16 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-[600px] h-[400px] bg-primary/5 rounded-full blur-3xl" />
@@ -408,7 +407,7 @@ const Tarifs = () => {
           </motion.div>
         </div>
       </section>
-    </Layout>
+    </div>
   );
 };
 
