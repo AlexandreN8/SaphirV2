@@ -274,13 +274,13 @@ const Reservation = () => {
               Réservation en ligne
             </span>
 
-            <h1 className="font-display text-5xl md:text-7xl font-bold mb-6 text-white tracking-tight">
+            <h1 className="font-display text-4xl sm:text-5xl md:text-7xl font-bold mb-6 text-white tracking-tight leading-tight">
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-primary to-gray-400">
                 Réservez <br />
               </span>
               Votre Créneau
             </h1>
-            <p className="text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-base md:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed px-2">
               Configurez votre prestation en quelques clics
             </p>
           </motion.div>
