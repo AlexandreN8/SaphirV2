@@ -5,7 +5,7 @@ import { Sparkles, Wrench, ChevronRight, Shield, Droplets, Brush, Car, ArrowRigh
 import GoogleReviews from '@/components/GoogleReviews';
 import heroDetailing from '@/assets/hero-detailing.jpg';
 import ceramicCoating from '@/assets/ceramic-coating.jpg';
-import polishing from '@/assets/polishing.jpg';
+import meca from '@/assets/meca.jpg';
 
 const processSteps = [
   {
@@ -260,7 +260,7 @@ const Index = () => {
                   {/* Image header */}
                   <div className="relative h-48 overflow-hidden">
                     <img 
-                      src={polishing} 
+                      src={meca} 
                       alt="Polissage automobile"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />

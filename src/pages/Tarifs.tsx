@@ -1,26 +1,24 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Check, Sparkles, Crown, Shield, Wrench, Droplet, Disc, Gauge, Settings, ArrowRight, HelpCircle } from 'lucide-react';
+import { 
+  Check, Sparkles, Crown, Shield, Wrench, Droplet, 
+  Disc, Gauge, Settings, ArrowRight, Star, Plus 
+} from 'lucide-react';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-// Detailing Packages
+
+// --- DATA ---
 const detailingPackages = [
   {
     name: 'Pack Essentiel',
     price: '89',
     duration: '2-3h',
     description: 'Le nettoyage premium pour entretenir régulièrement votre véhicule.',
-    features: [
-      'Lavage extérieur haute pression',
-      'Nettoyage jantes & pneus',
-      'Aspiration intérieure',
-      'Nettoyage vitres int/ext',
-      'Dépoussiérage tableau de bord',
-    ],
+    features: ['Lavage extérieur haute pression', 'Nettoyage jantes & pneus', 'Aspiration intérieure', 'Nettoyage vitres int/ext', 'Dépoussiérage tableau de bord'],
     highlighted: false,
     icon: Droplet,
   },
@@ -29,14 +27,7 @@ const detailingPackages = [
     price: '249',
     duration: '1 journée',
     description: 'Restauration complète pour redonner vie à votre véhicule.',
-    features: [
-      'Tout le Pack Essentiel',
-      'Décontamination clay bar',
-      'Polissage 1 étape',
-      'Shampoing sièges & moquettes',
-      'Traitement plastiques',
-      'Protection cire 3 mois',
-    ],
+    features: ['Tout le Pack Essentiel', 'Décontamination clay bar', 'Polissage 1 étape', 'Shampoing sièges & moquettes', 'Traitement plastiques', 'Protection cire 3 mois'],
     highlighted: true,
     badge: 'Recommandé',
     icon: Sparkles,
@@ -46,20 +37,12 @@ const detailingPackages = [
     price: '599',
     duration: '2-3 jours',
     description: 'Protection ultime avec revêtement céramique professionnel.',
-    features: [
-      'Tout le Pack Rénovation',
-      'Polissage correction 2 étapes',
-      'Protection céramique 9H',
-      'Traitement vitres hydrophobe',
-      'Traitement cuir premium',
-      'Protection 3-5 ans garantie',
-    ],
+    features: ['Tout le Pack Rénovation', 'Polissage correction 2 étapes', 'Protection céramique 9H', 'Traitement vitres hydrophobe', 'Traitement cuir premium', 'Protection 3-5 ans garantie'],
     highlighted: false,
     icon: Shield,
   },
 ];
 
-// Options supplémentaires
 const additionalOptions = [
   { name: 'Rénovation phares', price: '79', icon: Crown },
   { name: 'Traitement cuir complet', price: '149', icon: Sparkles },
@@ -67,7 +50,6 @@ const additionalOptions = [
   { name: 'Polissage jantes céramique', price: '99', icon: Disc },
 ];
 
-// Mécanique services
 const mechanicServices = [
   {
     category: 'Vidange & Filtres',
@@ -113,183 +95,238 @@ const mechanicServices = [
 
 const Tarifs = () => {
   return (
-    <div>
-      {/* Hero */}
-      <section className="pt-32 pb-16 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-[600px] h-[400px] bg-primary/5 rounded-full blur-3xl" />
-        <div className="container px-4 md:px-6 relative">
+    <div className="bg-[#050505] min-h-screen relative overflow-x-hidden">
+      
+      {/* --- BACKGROUND ATMOSPHERE (Corrected & Subtler) --- */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        
+        {/* 1. Gradient Orbs (Landing Page Style) */}
+        <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-primary/10 blur-[120px] rounded-full mix-blend-screen" />
+        <div className="absolute bottom-[10%] right-[-5%] w-[500px] h-[500px] bg-blue-600/10 blur-[100px] rounded-full mix-blend-screen" />
+
+        {/* 2. Grid Technique (Fade Out progressive) */}
+        <div 
+          className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:32px_32px]"
+          style={{
+            maskImage: 'linear-gradient(to bottom, black 0%, transparent 80%)',
+            WebkitMaskImage: 'linear-gradient(to bottom, black 0%, transparent 80%)'
+          }}
+        />
+      </div>
+
+      {/* --- HERO SECTION --- */}
+      <section className="pt-32 pb-20 relative z-10">
+        <div className="container px-4 md:px-6 relative text-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="text-center max-w-3xl mx-auto"
+            className="max-w-4xl mx-auto"
           >
-            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-card border border-white/10 text-sm text-primary mb-6">
-              Nos Offres
-            </span>
-            <h1 className="font-display text-4xl md:text-6xl font-bold mb-6">
-              Prestations & Tarifs
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-primary mb-6 backdrop-blur-md">
+              <Star className="w-3 h-3 fill-primary" />
+              <span>Tarifs Transparents & Formules Sur-Mesure</span>
+            </div>
+            
+            <h1 className="font-display text-5xl md:text-7xl font-bold mb-6 text-white tracking-tight">
+              Prestations & <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-blue-100 to-gray-400">
+                Tarifs
+              </span>
             </h1>
-            <p className="text-lg text-muted-foreground normal-case tracking-normal">
-              Des formules adaptées à tous les besoins, du nettoyage express 
-              à la protection céramique premium.
+            
+            <p className="text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
+              Des formules claires, sans surprise. Choisissez l'excellence pour votre véhicule.
             </p>
           </motion.div>
         </div>
       </section>
 
-      {/* Detailing Section */}
-      <section className="section-luxury">
+      {/* --- DETAILING SECTION --- */}
+      <section className="py-10 relative z-10">
         <div className="container px-4 md:px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="flex items-center gap-4 mb-12"
-          >
-            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
+          <div className="flex items-center gap-4 mb-16">
+            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-[0_0_15px_rgba(var(--primary),0.2)]">
               <Sparkles className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h2 className="font-display text-2xl md:text-3xl font-bold">Detailing</h2>
-              <p className="text-muted-foreground normal-case tracking-normal">Esthétique & Protection</p>
+              <h2 className="font-display text-3xl font-bold text-white">Detailing</h2>
+              <p className="text-gray-400 text-sm">Esthétique & Protection</p>
             </div>
-          </motion.div>
+          </div>
 
-          {/* Pricing Cards */}
-          <div className="grid md:grid-cols-3 gap-8 mb-16">
+          <div className="grid md:grid-cols-3 gap-6 lg:gap-8 mb-24 items-stretch">
             {detailingPackages.map((pkg, index) => (
               <motion.div
                 key={pkg.name}
                 initial={{ opacity: 0, y: 40 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                className={`relative ${pkg.highlighted ? 'md:-mt-4 md:mb-4' : ''} ${pkg.badge ? 'pt-4' : ''}`}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                className={`relative z-10 flex flex-col ${
+                  pkg.highlighted 
+                    ? 'md:-my-6' 
+                    : '' 
+                }`} 
               >
-                {pkg.badge && (
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 z-10">
-                    <span className="px-4 py-1.5 bg-primary text-primary-foreground text-xs font-semibold rounded-full shadow-lg">
-                      {pkg.badge}
-                    </span>
-                  </div>
+                {/* Glow Effect pour le Highlighted */}
+                {pkg.highlighted && (
+                  <div className="absolute inset-0 bg-primary/20 blur-3xl -z-10 rounded-full opacity-40 translate-y-10" />
                 )}
-                <div
-                  className={`glass-card h-full p-8 flex flex-col transition-all duration-300 ${
-                    pkg.highlighted 
-                      ? 'border-primary/40 shadow-[0_8px_40px_hsl(210_100%_55%/0.2)] mt-4' 
-                      : 'border-white/10 hover:border-primary/30 hover:shadow-[0_8px_32px_hsl(210_100%_55%/0.1)]'
-                  }`}
-                >
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className={`w-10 h-10 rounded-lg ${
-                      pkg.highlighted ? 'bg-primary/20' : 'bg-secondary'
-                    } flex items-center justify-center`}>
-                      <pkg.icon className={`w-5 h-5 ${pkg.highlighted ? 'text-primary' : 'text-foreground'}`} />
+
+                <div className={`
+                  relative h-full flex flex-col rounded-3xl overflow-visible transition-all duration-300
+                  ${pkg.highlighted 
+                    ? 'bg-[#121212] border-2 border-primary shadow-2xl z-20' 
+                    : 'bg-[#0f0f0f] border border-white/10 hover:border-white/20'
+                  }
+                `}>
+                  
+                  {/* BADGE RECOMMANDÉ */}
+                  {pkg.badge && (
+                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-30">
+                      <span className="px-4 py-1.5 bg-primary text-white text-xs font-bold uppercase tracking-widest rounded-full shadow-[0_0_15px_rgba(var(--primary),0.4)] border border-white/10">
+                        {pkg.badge}
+                      </span>
                     </div>
-                    <h3 className="font-display text-xl font-semibold">{pkg.name}</h3>
-                  </div>
+                  )}
 
-                  <div className="mb-4">
-                    <div className="flex items-baseline gap-1">
-                      <span className="font-display text-4xl font-bold">{pkg.price}</span>
-                      <span className="text-muted-foreground">€</span>
+                  {/* Padding ajusté  */}
+                  <div className={`flex flex-col h-full ${pkg.highlighted ? 'p-8 pt-10' : 'p-8'}`}>
+                    
+                    {/* Header */}
+                    <div className="mb-6">
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-5 ${
+                        pkg.highlighted ? 'bg-primary text-white' : 'bg-white/5 text-gray-400'
+                      }`}>
+                        <pkg.icon className="w-6 h-6" />
+                      </div>
+                      <h3 className="font-display text-2xl font-bold text-white">{pkg.name}</h3>
+                      <p className="text-sm text-gray-400 mt-2 leading-relaxed min-h-[40px]">
+                        {pkg.description}
+                      </p>
                     </div>
-                    <span className="text-sm text-muted-foreground">{pkg.duration}</span>
+
+                    {/* Prix */}
+                    <div className="mb-8 pb-8 border-b border-white/5">
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-4xl md:text-5xl font-bold text-white">{pkg.price}</span>
+                        <span className="text-2xl text-primary font-bold">€</span>
+                      </div>
+                      <div className="flex items-center gap-2 mt-2 text-xs text-gray-500 font-mono uppercase tracking-wide">
+                        <div className="w-2 h-2 rounded-full bg-gray-600" />
+                        Durée : {pkg.duration}
+                      </div>
+                    </div>
+
+                    {/* Features  */}
+                    <ul className="space-y-4 mb-8 flex-1">
+                      {pkg.features.map((feature) => (
+                        <li key={feature} className="flex items-start gap-3 text-sm text-gray-300">
+                          <Check className={`w-4 h-4 mt-0.5 shrink-0 ${pkg.highlighted ? 'text-primary' : 'text-gray-600'}`} />
+                          <span className="leading-snug">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    {/* Button */}
+                    <div className="mt-auto">
+                      <Link
+                        to="/reservation"
+                        className={`w-full py-4 rounded-xl font-bold text-center transition-all duration-300 flex items-center justify-center gap-2 group/btn ${
+                          pkg.highlighted
+                            ? 'bg-primary text-white hover:bg-primary/90 shadow-lg'
+                            : 'bg-white/5 text-white hover:bg-white/10 border border-white/5'
+                        }`}
+                      >
+                        Réserver
+                        <ArrowRight className="w-4 h-4 transition-transform group-hover/btn:translate-x-1" />
+                      </Link>
+                    </div>
                   </div>
-
-                  <p className="text-sm text-muted-foreground mb-6">{pkg.description}</p>
-
-                  <ul className="space-y-3 mb-8 flex-1">
-                    {pkg.features.map((feature) => (
-                      <li key={feature} className="flex items-start gap-3 text-sm">
-                        <Check className={`w-4 h-4 mt-0.5 shrink-0 ${
-                          pkg.highlighted ? 'text-primary' : 'text-muted-foreground'
-                        }`} />
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  <Link
-                    to="/reservation"
-                    className={pkg.highlighted ? 'btn-premium w-full text-center' : 'btn-outline-luxury w-full text-center'}
-                  >
-                    Réserver
-                  </Link>
                 </div>
               </motion.div>
             ))}
           </div>
 
-          {/* Additional Options */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
-            <h3 className="font-display text-xl font-semibold mb-6">Options Supplémentaires</h3>
+          {/* Options "À la carte" */}
+          <div className="mb-20">
+             <div className="flex items-center gap-2 mb-6 opacity-80">
+                <Plus className="w-4 h-4 text-primary" />
+                <h3 className="text-sm font-bold uppercase tracking-widest text-white">Options à la carte</h3>
+             </div>
+
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {additionalOptions.map((option) => (
-                <div key={option.name} className="glass-card p-4 flex items-center justify-between border border-white/10 hover:border-primary/30 transition-all duration-300">
-                  <div className="flex items-center gap-3">
-                    <option.icon className="w-5 h-5 text-primary" />
-                    <span className="text-sm">{option.name}</span>
+              {additionalOptions.map((option, idx) => (
+                <motion.div
+                  key={option.name}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: idx * 0.1 }}
+                  className="group relative overflow-hidden rounded-xl bg-white/5 border border-white/10 p-5 hover:border-primary/50 hover:bg-white/10 transition-all duration-300"
+                >
+                  <div className="flex items-center justify-between relative z-10">
+                    <div className="flex items-center gap-3">
+                      <div className="text-gray-400 group-hover:text-primary transition-colors">
+                        <option.icon className="w-5 h-5" />
+                      </div>
+                      <span className="font-medium text-gray-200 text-sm">{option.name}</span>
+                    </div>
+                    <span className="font-bold text-white bg-black/20 px-2 py-1 rounded-md text-sm">{option.price}€</span>
                   </div>
-                  <span className="font-semibold">{option.price}€</span>
-                </div>
+                </motion.div>
               ))}
             </div>
-          </motion.div>
+          </div>
         </div>
       </section>
 
-      {/* Mécanique Section */}
-      <section className="section-luxury relative overflow-hidden">
+      {/* --- MECHANIC SECTION (Revu : Palette Argent/Bleu) --- */}
+      <section className="py-20 relative border-t border-white/5 bg-gradient-to-b from-[#050505] to-[#0a0a0a]">
         <div className="container px-4 md:px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="flex items-center gap-4 mb-12"
-          >
+          <div className="flex items-center gap-4 mb-12">
+            {/* Icône Méca : Gris/Blanc (Chrome) au lieu de Orange */}
             <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center border border-white/10">
-              <Wrench className="w-6 h-6 text-chrome" />
+              <Wrench className="w-6 h-6 text-gray-300" />
             </div>
             <div>
-              <h2 className="font-display text-2xl md:text-3xl font-bold">Mécanique Légère</h2>
-              <p className="text-muted-foreground normal-case tracking-normal">Entretien & Réparations</p>
+              <h2 className="font-display text-3xl font-bold text-white">Mécanique</h2>
+              <p className="text-gray-400 text-sm">Entretien & Technique</p>
             </div>
-          </motion.div>
+          </div>
 
-          {/* Services Grid */}
-          <div className="grid md:grid-cols-2 gap-8">
+          <div className="grid md:grid-cols-2 gap-6 lg:gap-8">
             {mechanicServices.map((service, index) => (
               <motion.div
                 key={service.category}
-                initial={{ opacity: 0, y: 40 }}
+                initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                className="glass-card overflow-hidden border border-white/10 hover:border-chrome/30 transition-all duration-500"
+                transition={{ duration: 0.5 }}
+                className="bg-[#0f0f0f] rounded-2xl border border-white/5 overflow-hidden hover:border-blue-400/30 transition-colors duration-500 group"
               >
-                {/* Header */}
-                <div className="p-6 border-b border-white/10 flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center border border-white/10">
-                    <service.icon className="w-5 h-5 text-chrome" />
+                <div className="p-5 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    {/* Icône change au survol vers le bleu léger */}
+                    <service.icon className="w-5 h-5 text-gray-500 group-hover:text-blue-300 transition-colors" />
+                    <h3 className="font-bold text-white text-lg">{service.category}</h3>
                   </div>
-                  <h3 className="font-display text-lg font-semibold">{service.category}</h3>
                 </div>
 
-                {/* Table */}
-                <div className="divide-y divide-white/5">
-                  {service.items.map((item) => (
-                    <div key={item.name} className="p-4 flex items-center justify-between hover:bg-secondary/30 transition-colors">
+                <div className="p-2">
+                  {service.items.map((item, i) => (
+                    <div key={i} className="flex items-center justify-between p-3.5 hover:bg-white/5 rounded-xl transition-colors group/item">
                       <div>
-                        <p className="font-medium text-sm">{item.name}</p>
-                        <p className="text-xs text-muted-foreground">{item.note}</p>
+                        <div className="text-gray-300 font-medium text-sm group-hover/item:text-white transition-colors">
+                          {item.name}
+                        </div>
+                        <div className="text-xs text-gray-600 mt-0.5">{item.note}</div>
                       </div>
-                      <span className="font-mono text-sm text-chrome font-medium">{item.price}</span>
+                      <div className="text-right">
+                        {/* Prix en bleu clair discret pour rester dans la palette */}
+                        <div className="font-mono text-blue-200/80 font-bold text-sm">{item.price}</div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -297,114 +334,42 @@ const Tarifs = () => {
             ))}
           </div>
 
-          {/* CTA */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="mt-12 text-center"
-          >
-            <p className="text-muted-foreground mb-4">
-              Besoin d'un devis personnalisé pour votre véhicule ?
-            </p>
-            <Link to="/contact" className="btn-outline-luxury inline-flex">
-              Demander un devis
-              <ArrowRight className="w-5 h-5 ml-2" />
+          <div className="mt-12 flex justify-center">
+            <Link 
+              to="/contact" 
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 text-sm text-white transition-all"
+            >
+              Demander un devis spécifique
+              <ArrowRight className="w-4 h-4" />
             </Link>
-          </motion.div>
+          </div>
         </div>
       </section>
 
-      {/* FAQ Section */}
-      <section className="section-luxury">
-        <div className="container px-4 md:px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="flex items-center gap-4 mb-12"
-          >
-            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
-              <HelpCircle className="w-6 h-6 text-primary" />
-            </div>
-            <div>
-              <h2 className="font-display text-2xl md:text-3xl font-bold">Questions Fréquentes</h2>
-              <p className="text-muted-foreground normal-case tracking-normal">Tout ce que vous devez savoir</p>
-            </div>
-          </motion.div>
+      {/* --- FAQ SECTION --- */}
+      <section className="py-20 relative z-10">
+        <div className="container px-4 md:px-6 max-w-3xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="font-display text-3xl font-bold text-white mb-4">Questions Fréquentes</h2>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="max-w-3xl mx-auto"
-          >
-            <Accordion type="single" collapsible className="space-y-4">
-              <AccordionItem value="item-1" className="glass-card border-white/10 px-6 rounded-xl overflow-hidden">
-                <AccordionTrigger className="text-left font-semibold hover:no-underline py-5">
-                  Combien de temps dure une prestation detailing ?
+          <Accordion type="single" collapsible className="space-y-3">
+            {[
+              { q: "Combien de temps dure une prestation ?", a: "La durée varie selon le pack : 2-3h pour l'Essentiel, 1 jour pour la Rénovation, et jusqu'à 3 jours pour la Céramique." },
+              { q: "Quelle différence entre cire et céramique ?", a: "La cire offre une brillance de 3 mois. La céramique est une couche de verre liquide qui protège physiquement la peinture pendant 3 à 5 ans." },
+              { q: "Dois-je préparer mon véhicule ?", a: "Non, nous nous occupons de tout. Pensez juste à retirer vos effets personnels de valeur." },
+              { q: "Moyens de paiement ?", a: "CB, Espèces, Virement. Paiement en plusieurs fois possible pour les gros montants." }
+            ].map((item, i) => (
+              <AccordionItem key={i} value={`item-${i}`} className="bg-[#0f0f0f] border border-white/5 rounded-xl px-6 data-[state=open]:border-primary/30 transition-colors">
+                <AccordionTrigger className="text-white hover:text-primary hover:no-underline py-5 text-left font-medium text-sm">
+                  {item.q}
                 </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground pb-5 normal-case tracking-normal">
-                  La durée varie selon le pack choisi : le Pack Essentiel prend 2 à 3 heures, le Pack Rénovation une journée complète, 
-                  et le Pack Céramique nécessite 2 à 3 jours pour un résultat optimal. Nous vous informons toujours du temps estimé 
-                  lors de la réservation.
+                <AccordionContent className="text-gray-400 pb-5 leading-relaxed text-sm">
+                  {item.a}
                 </AccordionContent>
               </AccordionItem>
-
-              <AccordionItem value="item-2" className="glass-card border-white/10 px-6 rounded-xl overflow-hidden">
-                <AccordionTrigger className="text-left font-semibold hover:no-underline py-5">
-                  Quelle est la différence entre cire et céramique ?
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground pb-5 normal-case tracking-normal">
-                  La cire carnauba offre une brillance exceptionnelle mais dure 2 à 3 mois. La protection céramique 9H crée 
-                  une couche permanente sur la peinture, résistante aux rayures légères, aux UV et aux produits chimiques, 
-                  avec une garantie de 3 à 5 ans.
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="item-3" className="glass-card border-white/10 px-6 rounded-xl overflow-hidden">
-                <AccordionTrigger className="text-left font-semibold hover:no-underline py-5">
-                  Dois-je préparer mon véhicule avant de venir ?
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground pb-5 normal-case tracking-normal">
-                  Non, amenez simplement votre véhicule tel quel. Nous nous occupons de tout, du nettoyage initial à la 
-                  finition. Pensez simplement à retirer vos effets personnels de l'habitacle.
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="item-4" className="glass-card border-white/10 px-6 rounded-xl overflow-hidden">
-                <AccordionTrigger className="text-left font-semibold hover:no-underline py-5">
-                  Proposez-vous un service de véhicule de courtoisie ?
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground pb-5 normal-case tracking-normal">
-                  Pour les prestations de plus d'une journée (Pack Céramique), nous proposons un véhicule de courtoisie 
-                  sur réservation préalable, selon disponibilité. Contactez-nous pour en savoir plus.
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="item-5" className="glass-card border-white/10 px-6 rounded-xl overflow-hidden">
-                <AccordionTrigger className="text-left font-semibold hover:no-underline py-5">
-                  Comment fonctionne la garantie sur les protections céramiques ?
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground pb-5 normal-case tracking-normal">
-                  Notre protection céramique est garantie 3 à 5 ans selon le produit choisi. Cette garantie couvre 
-                  l'hydrophobie, la brillance et la résistance aux contaminants. Un entretien annuel est recommandé 
-                  pour maintenir les performances optimales.
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="item-6" className="glass-card border-white/10 px-6 rounded-xl overflow-hidden">
-                <AccordionTrigger className="text-left font-semibold hover:no-underline py-5">
-                  Quels moyens de paiement acceptez-vous ?
-                </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground pb-5 normal-case tracking-normal">
-                  Nous acceptons les paiements par carte bancaire, espèces et virement. Pour les prestations importantes, 
-                  un paiement en plusieurs fois sans frais peut être proposé. Le règlement s'effectue à la restitution 
-                  du véhicule.
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-          </motion.div>
+            ))}
+          </Accordion>
         </div>
       </section>
     </div>

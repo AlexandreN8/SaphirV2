@@ -273,10 +273,14 @@ const Reservation = () => {
               <Calendar className="w-4 h-4" />
               Réservation en ligne
             </span>
-            <h1 className="font-display text-4xl md:text-5xl font-bold mb-4">
-              Réservez Votre Créneau
+
+            <h1 className="font-display text-5xl md:text-7xl font-bold mb-6 text-white tracking-tight">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-primary to-gray-400">
+                Réservez <br />
+              </span>
+              Votre Créneau
             </h1>
-            <p className="text-muted-foreground normal-case tracking-normal">
+            <p className="text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
               Configurez votre prestation en quelques clics
             </p>
           </motion.div>
