@@ -1,22 +1,31 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom';
 import { 
-  Car, 
+  CarFront, 
+  Truck, 
+  Van, 
+  Car,
   ChevronRight, 
   ChevronLeft, 
-  Calendar, 
+  Calendar as CalendarIcon, 
   Check, 
   Sparkles, 
-  Shield,
-  Droplet,
-  Wrench,
-  Disc,
-  Gauge,
-  Clock,
-  Crown,
-  Settings
+  Shield, 
+  Droplet, 
+  Wrench, 
+  Disc, 
+  Gauge, 
+  Clock, 
+  Crown, 
+  Settings,
+  Calendar, 
+  Info,
+  User,
+  Mail,
+  Phone,
+  MessageSquare
 } from 'lucide-react';
+
 
 // Vehicle types
 const vehicleTypes = [
@@ -26,7 +35,7 @@ const vehicleTypes = [
     description: 'Petites voitures compactes',
     examples: 'Clio, 208, Polo',
     priceModifier: 1,
-    icon: '🚗',
+    icon: CarFront,
   },
   {
     id: 'berline',
@@ -34,7 +43,7 @@ const vehicleTypes = [
     description: 'Véhicules standards',
     examples: 'Classe C, A4, Serie 3',
     priceModifier: 1.15,
-    icon: '🚘',
+    icon: Car,
   },
   {
     id: 'suv',
@@ -42,7 +51,7 @@ const vehicleTypes = [
     description: 'Véhicules de taille moyenne',
     examples: 'X3, Q5, GLC',
     priceModifier: 1.3,
-    icon: '🚙',
+    icon: Truck,
   },
   {
     id: 'premium',
@@ -50,7 +59,7 @@ const vehicleTypes = [
     description: 'Grands véhicules',
     examples: 'Classe S, X5, Range Rover',
     priceModifier: 1.5,
-    icon: '🏎️',
+    icon: Van,
   },
 ];
 
@@ -83,52 +92,115 @@ const detailingPacks = [
   },
 ];
 
-// Detailing Options (multiple can be selected)
+// Detailing Options
 const detailingOptions = [
-  { id: 'phares', name: 'Rénovation phares', basePrice: 79, icon: Crown },
-  { id: 'cuir', name: 'Traitement cuir complet', basePrice: 149, icon: Sparkles },
-  { id: 'ozone', name: 'Traitement anti-odeur ozone', basePrice: 49, icon: Settings },
-  { id: 'jantes_ceramique', name: 'Céramique jantes', basePrice: 99, icon: Disc },
+  { 
+    id: 'phares', 
+    name: 'Rénovation phares', 
+    basePrice: 79, 
+    icon: Crown, 
+    desc: 'Restauration clarté & protection UV' 
+  },
+  { 
+    id: 'cuir', 
+    name: 'Traitement cuir complet', 
+    basePrice: 149, 
+    icon: Sparkles, 
+    desc: 'Nettoyage profond & soin nourrissant' 
+  },
+  { 
+    id: 'ozone', 
+    name: 'Traitement anti-odeur ozone', 
+    basePrice: 49, 
+    icon: Settings, 
+    desc: 'Désinfection & destruction odeurs' 
+  },
+  { 
+    id: 'jantes_ceramique', 
+    name: 'Céramique jantes', 
+    basePrice: 99, 
+    icon: Disc, 
+    desc: 'Protection H.T. & facilité de lavage' 
+  },
 ];
 
-// Mechanic Options (multiple can be selected)
+// Mechanic Options 
 const mechanicOptions = [
-  { id: 'vidange', name: 'Vidange + Filtre', basePrice: 79, icon: Droplet },
-  { id: 'plaquettes_av', name: 'Plaquettes AV', basePrice: 89, icon: Disc },
-  { id: 'plaquettes_ar', name: 'Plaquettes AR', basePrice: 79, icon: Disc },
-  { id: 'geometrie', name: 'Géométrie', basePrice: 89, icon: Gauge },
-  { id: 'diagnostic', name: 'Diagnostic', basePrice: 49, icon: Wrench },
+  { 
+    id: 'vidange', 
+    name: 'Vidange + Filtre', 
+    basePrice: 79, 
+    icon: Droplet, 
+    desc: 'Huile constructeur & remplacement filtre' 
+  },
+  { 
+    id: 'plaquettes_av', 
+    name: 'Plaquettes AV', 
+    basePrice: 89, 
+    icon: Disc, 
+    desc: 'Remplacement jeu avant complet' 
+  },
+  { 
+    id: 'plaquettes_ar', 
+    name: 'Plaquettes AR', 
+    basePrice: 79, 
+    icon: Disc, 
+    desc: 'Remplacement jeu arrière complet' 
+  },
+  { 
+    id: 'geometrie', 
+    name: 'Géométrie', 
+    basePrice: 89, 
+    icon: Gauge, 
+    desc: 'Réglage parallélisme & direction' 
+  },
+  { 
+    id: 'diagnostic', 
+    name: 'Diagnostic', 
+    basePrice: 49, 
+    icon: Wrench, 
+    desc: 'Lecture codes défauts & bilan santé' 
+  },
 ];
 
-// Calendar mock data
-const generateCalendarDays = () => {
-  const days = [];
-  const today = new Date();
-  for (let i = 0; i < 14; i++) {
-    const date = new Date(today);
-    date.setDate(today.getDate() + i);
-    days.push({
-      date,
-      available: Math.random() > 0.3,
-      slots: Math.random() > 0.5 ? ['09:00', '14:00'] : ['09:00', '11:00', '14:00', '16:00'],
-    });
-  }
-  return days;
-};
-
-const calendarDays = generateCalendarDays();
 
 const Reservation = () => {
   const [step, setStep] = useState(1);
   const [selectedVehicle, setSelectedVehicle] = useState<string | null>(null);
-  const [selectedPack, setSelectedPack] = useState<string | null>(null);
+  const [selectedPack, setSelectedPack] = useState<string | null>('renovation');
   const [selectedDetailingOptions, setSelectedDetailingOptions] = useState<string[]>([]);
   const [selectedMechanicOptions, setSelectedMechanicOptions] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    notes: ''
+  });
 
   const totalSteps = 4;
 
+  // --- 2. LES EFFETS (useEffect) ---
+  useEffect(() => {
+    const findNextAvailableDate = () => {
+      let date = new Date();
+      date.setDate(date.getDate() + 1); 
+      while (date.getDay() === 0 || date.getDay() === 6) {
+        date.setDate(date.getDate() + 1);
+      }
+      return date;
+    };
+
+    const nextDate = findNextAvailableDate();
+    setSelectedDate(nextDate);
+    setCurrentMonth(nextDate);
+  }, []);
+
+  // --- 3. LES FONCTIONS UTILITAIRES ---
   const getVehicle = () => vehicleTypes.find((v) => v.id === selectedVehicle);
 
   const calculateTotal = () => {
@@ -137,26 +209,20 @@ const Reservation = () => {
 
     let total = 0;
     
-    // Add pack price
+    // Pack
     const pack = detailingPacks.find((p) => p.id === selectedPack);
-    if (pack) {
-      total += pack.basePrice * vehicle.priceModifier;
-    }
+    if (pack) total += pack.basePrice * vehicle.priceModifier;
     
-    // Add detailing options
+    // Options Detailing
     selectedDetailingOptions.forEach((optionId) => {
       const option = detailingOptions.find((o) => o.id === optionId);
-      if (option) {
-        total += option.basePrice * vehicle.priceModifier;
-      }
+      if (option) total += option.basePrice * vehicle.priceModifier;
     });
     
-    // Add mechanic options (no vehicle modifier)
+    // Options Meca
     selectedMechanicOptions.forEach((optionId) => {
       const option = mechanicOptions.find((o) => o.id === optionId);
-      if (option) {
-        total += option.basePrice;
-      }
+      if (option) total += option.basePrice;
     });
     
     return Math.round(total);
@@ -164,77 +230,31 @@ const Reservation = () => {
 
   const toggleDetailingOption = (optionId: string) => {
     setSelectedDetailingOptions((prev) =>
-      prev.includes(optionId)
-        ? prev.filter((id) => id !== optionId)
-        : [...prev, optionId]
+      prev.includes(optionId) ? prev.filter((id) => id !== optionId) : [...prev, optionId]
     );
   };
 
   const toggleMechanicOption = (optionId: string) => {
     setSelectedMechanicOptions((prev) =>
-      prev.includes(optionId)
-        ? prev.filter((id) => id !== optionId)
-        : [...prev, optionId]
+      prev.includes(optionId) ? prev.filter((id) => id !== optionId) : [...prev, optionId]
     );
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const isFormValid = formData.firstName && formData.lastName && formData.email && formData.phone;
+
   const canProceed = () => {
     switch (step) {
-      case 1:
-        return selectedVehicle !== null;
-      case 2:
-        return selectedPack !== null || selectedDetailingOptions.length > 0 || selectedMechanicOptions.length > 0;
-      case 3:
-        return selectedDate !== null && selectedTime !== null;
-      case 4:
-        return true;
-      default:
-        return false;
+      case 1: return selectedVehicle !== null;
+      case 2: return selectedPack !== null; // Simplifié pour la démo
+      case 3: return selectedDate !== null && selectedTime !== null;
+      case 4: return true;
+      default: return false;
     }
-  };
-
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('fr-FR', {
-      weekday: 'short',
-      day: 'numeric',
-      month: 'short',
-    }).format(date);
-  };
-
-  const getAllSelectedServices = () => {
-    const services: { name: string; price: number }[] = [];
-    const vehicle = getVehicle();
-    if (!vehicle) return services;
-
-    const pack = detailingPacks.find((p) => p.id === selectedPack);
-    if (pack) {
-      services.push({
-        name: pack.name,
-        price: Math.round(pack.basePrice * vehicle.priceModifier),
-      });
-    }
-
-    selectedDetailingOptions.forEach((optionId) => {
-      const option = detailingOptions.find((o) => o.id === optionId);
-      if (option) {
-        services.push({
-          name: option.name,
-          price: Math.round(option.basePrice * vehicle.priceModifier),
-        });
-      }
-    });
-
-    selectedMechanicOptions.forEach((optionId) => {
-      const option = mechanicOptions.find((o) => o.id === optionId);
-      if (option) {
-        services.push({
-          name: option.name,
-          price: option.basePrice,
-        });
-      }
-    });
-
-    return services;
   };
 
   return (
@@ -327,7 +347,7 @@ const Reservation = () => {
                       }`}
                     >
                       <div className="flex items-start gap-4">
-                        <span className="text-4xl">{vehicle.icon}</span>
+                        <vehicle.icon className={`w-8 h-8 mt-1  ${selectedVehicle === vehicle.id ? 'text-primary' : 'text-muted-foreground'}`} />
                         <div className="flex-1">
                           <h3 className="font-display font-semibold text-lg">{vehicle.name}</h3>
                           <p className="text-sm text-muted-foreground mb-1">{vehicle.description}</p>
@@ -343,282 +363,661 @@ const Reservation = () => {
               </motion.div>
             )}
 
-            {/* Step 2: Service Selection */}
+            {/* --- STEP 2: PRESTATIONS  --- */}
             {step === 2 && (
               <motion.div
                 key="step2"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-                className="max-w-5xl mx-auto"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="max-w-3xl mx-auto"
               >
-                <h2 className="font-display text-2xl font-bold mb-2 text-center">
-                  Choisissez vos prestations
-                </h2>
-                <p className="text-muted-foreground text-center mb-8 normal-case tracking-normal">
-                  Sélectionnez un pack detailing et ajoutez des options selon vos besoins
-                </p>
+                <div className="text-center mb-10">
+                  <h2 className="text-3xl font-bold font-display text-white">Sélection des Services</h2>
+                  <p className="text-muted-foreground mt-2">Construisez votre formule idéale</p>
+                </div>
 
-                {/* Detailing Packs Section (Single Selection) */}
-                <div className="mb-10">
-                  <div className="flex items-center gap-3 mb-4">
-                    <Sparkles className="w-5 h-5 text-primary" />
-                    <h3 className="font-display font-semibold">Packs Detailing</h3>
-                    <span className="text-xs text-muted-foreground">(1 seul choix possible)</span>
-                  </div>
-                  <div className="grid md:grid-cols-3 gap-4">
-                    {detailingPacks.map((pack) => (
-                      <motion.button
-                        key={pack.id}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => setSelectedPack(selectedPack === pack.id ? null : pack.id)}
-                        className={`glass-card p-6 text-left transition-all relative ${
-                          selectedPack === pack.id
-                            ? 'border-primary shadow-glow'
-                            : 'hover:border-primary/30'
-                        }`}
-                      >
-                        {pack.popular && (
-                          <span className="absolute -top-2 right-4 px-2 py-0.5 bg-primary text-primary-foreground text-xs rounded-full">
-                            Populaire
-                          </span>
-                        )}
-                        <pack.icon className={`w-8 h-8 mb-4 ${selectedPack === pack.id ? 'text-primary' : 'text-muted-foreground'}`} />
-                        <h4 className="font-display font-semibold mb-1">{pack.name}</h4>
-                        <div className="flex items-center gap-2 mb-3">
-                          <span className="text-2xl font-bold">
-                            {Math.round(pack.basePrice * (getVehicle()?.priceModifier || 1))}€
-                          </span>
-                          <span className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {pack.duration}
-                          </span>
-                        </div>
-                        <ul className="space-y-1">
-                          {pack.features.map((f) => (
-                            <li key={f} className="text-xs text-muted-foreground flex items-center gap-2">
-                              <div className="w-1 h-1 rounded-full bg-primary" />
-                              {f}
-                            </li>
-                          ))}
-                        </ul>
-                        {selectedPack === pack.id && (
-                          <div className="absolute top-4 right-4">
-                            <Check className="w-5 h-5 text-primary" />
+                {/* SECTION 1 : PACK PRINCIPAL  */}
+                <div className="mb-12">
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4 pl-2 flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                    1. Choisissez votre base (Obligatoire)
+                  </h3>
+                  
+                  <div className="bg-[#0f0f0f] border border-white/10 rounded-2xl overflow-hidden divide-y divide-white/5">
+                    {detailingPacks.map((pack) => {
+                      const isSelected = selectedPack === pack.id;
+                      const price = Math.round(pack.basePrice * (getVehicle()?.priceModifier || 1));
+
+                      return (
+                        <motion.div
+                          layout 
+                          key={pack.id}
+                          onClick={() => setSelectedPack(pack.id)}
+                          className={`relative cursor-pointer transition-colors duration-300 group ${
+                            isSelected ? 'bg-white/[0.04]' : 'hover:bg-white/[0.02]'
+                          }`}
+                        >
+                          <div className="p-5 flex items-start gap-5">
+                            
+                            {/* ICÔNE */}
+                            <div className={`flex-shrink-0 p-3 rounded-xl transition-all duration-300 ${
+                              isSelected 
+                                ? 'bg-primary text-white shadow-[0_0_20px_rgba(var(--primary),0.3)] scale-110' 
+                                : 'bg-white/5 text-gray-500 group-hover:bg-white/10 group-hover:text-gray-300'
+                            }`}>
+                              <pack.icon className="w-6 h-6" />
+                            </div>
+
+                            <div className="flex-1 pt-1">
+                              <div className="flex justify-between items-start">
+                                <div className="flex flex-col">
+                                  <div className="flex items-center gap-3">
+                                    <h4 className={`text-lg font-bold transition-colors ${isSelected ? 'text-white' : 'text-gray-300'}`}>
+                                      {pack.name}
+                                    </h4>
+                                    {/* BADGE POPULAIRE */}
+                                    {pack.popular && (
+                                      <span className="text-[10px] font-bold uppercase tracking-wider bg-primary/20 text-primary px-2 py-0.5 rounded-full border border-primary/20">
+                                        Recommandé
+                                      </span>
+                                    )}
+                                  </div>
+                                  
+                                  {/* Résumé court */}
+                                  {!isSelected && (
+                                    <motion.p 
+                                      initial={{ opacity: 0 }} 
+                                      animate={{ opacity: 1 }} 
+                                      className="text-sm text-muted-foreground mt-1"
+                                    >
+                                      {pack.features.slice(0, 3).join(' • ')}...
+                                    </motion.p>
+                                  )}
+                                </div>
+
+                                <div className="text-right">
+                                  <span className={`block text-xl font-bold transition-colors ${isSelected ? 'text-primary' : 'text-white'}`}>
+                                    {price}€
+                                  </span>
+                                </div>
+                              </div>
+                              
+                              {/* ACCORDÉON DÉTAILS */}
+                              <AnimatePresence>
+                                {isSelected && (
+                                  <motion.div
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: 'auto', opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    className="overflow-hidden"
+                                  >
+                                    <div className="pt-4 mt-3 border-t border-white/5">
+                                      <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                        INCLUS DANS CE PACK :
+                                      </p>
+                                      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4">
+                                        {pack.features.map((f, i) => (
+                                          <li key={i} className="flex items-start gap-2 text-sm text-gray-300">
+                                            <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                                            <span className="opacity-90">{f}</span>
+                                          </li>
+                                        ))}
+                                      </ul>
+                                      <div className="mt-4 flex items-center gap-2 text-xs text-primary font-medium bg-primary/10 w-fit px-3 py-1.5 rounded-full">
+                                        <Clock className="w-3 h-3" />
+                                        Durée estimée : {pack.duration}
+                                      </div>
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </div>
                           </div>
-                        )}
-                      </motion.button>
-                    ))}
+                          
+                          {/* LIGNE ACTIVE (Barre Gauche) */}
+                          {isSelected && (
+                            <motion.div 
+                              layoutId="active-pack-line"
+                              className="absolute left-0 top-0 bottom-0 w-1 bg-primary" 
+                              transition={{ 
+                                type: "spring", 
+                                stiffness: 300, 
+                                damping: 30 
+                              }}
+                            />
+                          )}
+                        </motion.div>
+                      );
+                    })}
                   </div>
                 </div>
 
-                {/* Detailing Options Section (Multiple Selection) */}
+                {/* --- BLOC 1 : OPTIONS DETAILING (Esthétique) --- */}
                 <div className="mb-10">
-                  <div className="flex items-center gap-3 mb-4">
-                    <Crown className="w-5 h-5 text-primary" />
-                    <h3 className="font-display font-semibold">Options Detailing</h3>
-                    <span className="text-xs text-muted-foreground">(cumulables)</span>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {detailingOptions.map((option) => (
-                      <motion.button
-                        key={option.id}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => toggleDetailingOption(option.id)}
-                        className={`glass-card p-4 text-center transition-all ${
-                          selectedDetailingOptions.includes(option.id)
-                            ? 'border-primary shadow-glow'
-                            : 'hover:border-primary/30'
-                        }`}
-                      >
-                        <option.icon className={`w-6 h-6 mx-auto mb-2 ${selectedDetailingOptions.includes(option.id) ? 'text-primary' : 'text-muted-foreground'}`} />
-                        <h4 className="text-sm font-medium mb-1">{option.name}</h4>
-                        <span className="text-lg font-bold">
-                          {Math.round(option.basePrice * (getVehicle()?.priceModifier || 1))}€
-                        </span>
-                      </motion.button>
-                    ))}
+                  <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-primary mb-4 pl-2">
+                    <Sparkles className="w-4 h-4" />
+                    Options Esthétiques
+                  </h3>
+
+                  <div className="bg-[#0f0f0f] border border-white/10 rounded-2xl overflow-hidden divide-y divide-white/5">
+                    {detailingOptions.map((opt) => {
+                      const isSelected = selectedDetailingOptions.includes(opt.id);
+                      const price = Math.round(opt.basePrice * (getVehicle()?.priceModifier || 1));
+
+                      return (
+                        <div
+                          key={opt.id}
+                          onClick={() => toggleDetailingOption(opt.id)}
+                          className="group p-5 flex items-center justify-between cursor-pointer hover:bg-white/[0.02] transition-all"
+                        >
+                          {/* Infos Option */}
+                          <div className="flex items-center gap-4">
+                            <div className={`p-2.5 rounded-xl transition-colors ${
+                              isSelected ? 'bg-primary/20 text-primary' : 'bg-white/5 text-gray-500'
+                            }`}>
+                              <opt.icon className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <div className={`font-medium transition-colors ${isSelected ? 'text-white' : 'text-gray-400 group-hover:text-gray-200'}`}>
+                                {opt.name}
+                              </div>
+                              {opt.desc && <div className="text-xs text-gray-600 mt-0.5">{opt.desc}</div>}
+                            </div>
+                          </div>
+
+                          {/* Prix + Switch */}
+                          <div className="flex items-center gap-5">
+                            <span className="font-bold text-sm text-gray-300">+{price}€</span>
+                            
+                            {/* Switch Bleu */}
+                            <div className={`w-12 h-7 rounded-full transition-colors relative ${
+                              isSelected ? 'bg-primary' : 'bg-white/10'
+                            }`}>
+                              <motion.div 
+                                initial={false}
+                                animate={{ x: isSelected ? 22 : 2 }}
+                                className="absolute top-1 left-0 w-5 h-5 rounded-full bg-white shadow-sm"
+                                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
-                {/* Mechanic Options Section (Multiple Selection) */}
+                {/* --- BLOC 2 : OPTIONS MECANIQUE (Technique) --- */}
                 <div>
-                  <div className="flex items-center gap-3 mb-4">
-                    <Wrench className="w-5 h-5 text-chrome" />
-                    <h3 className="font-display font-semibold">Mécanique Légère</h3>
-                    <span className="text-xs text-muted-foreground">(cumulables)</span>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                    {mechanicOptions.map((option) => (
-                      <motion.button
-                        key={option.id}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => toggleMechanicOption(option.id)}
-                        className={`glass-card p-4 text-center transition-all ${
-                          selectedMechanicOptions.includes(option.id)
-                            ? 'border-chrome shadow-[0_0_30px_hsl(220_5%_75%/0.2)]'
-                            : 'hover:border-chrome/30'
-                        }`}
-                      >
-                        <option.icon className={`w-6 h-6 mx-auto mb-2 ${selectedMechanicOptions.includes(option.id) ? 'text-chrome' : 'text-muted-foreground'}`} />
-                        <h4 className="text-sm font-medium mb-1">{option.name}</h4>
-                        <span className="text-lg font-bold">{option.basePrice}€</span>
-                      </motion.button>
-                    ))}
+                  <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-orange-500 mb-4 pl-2">
+                    <Wrench className="w-4 h-4" />
+                    Entretien Mécanique
+                  </h3>
+
+                  <div className="bg-[#0f0f0f] border border-white/10 rounded-2xl overflow-hidden divide-y divide-white/5">
+                    {mechanicOptions.map((opt) => {
+                      const isSelected = selectedMechanicOptions.includes(opt.id);
+                      
+                      return (
+                        <div
+                          key={opt.id}
+                          onClick={() => toggleMechanicOption(opt.id)}
+                          className="group p-5 flex items-center justify-between cursor-pointer hover:bg-white/[0.02] transition-all"
+                        >
+                          {/* Infos Option */}
+                          <div className="flex items-center gap-4">
+                            <div className={`p-2.5 rounded-xl transition-colors ${
+                              isSelected ? 'bg-orange-500/20 text-orange-500' : 'bg-white/5 text-gray-500'
+                            }`}>
+                              <opt.icon className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <div className={`font-medium transition-colors ${isSelected ? 'text-white' : 'text-gray-400 group-hover:text-gray-200'}`}>
+                                {opt.name}
+                              </div>
+                              <div className="text-xs text-gray-600 mt-0.5">Entretien courant</div>
+                            </div>
+                          </div>
+
+                          {/* Prix + Switch */}
+                          <div className="flex items-center gap-5">
+                            <span className="font-bold text-sm text-gray-300">+{opt.basePrice}€</span>
+                            
+                            {/* Switch Orange */}
+                            <div className={`w-12 h-7 rounded-full transition-colors relative ${
+                              isSelected ? 'bg-orange-500' : 'bg-white/10'
+                            }`}>
+                              <motion.div 
+                                initial={false}
+                                animate={{ x: isSelected ? 22 : 2 }}
+                                className="absolute top-1 left-0 w-5 h-5 rounded-full bg-white shadow-sm"
+                                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </motion.div>
             )}
 
-            {/* Step 3: Date Selection */}
+            {/* Step 3: Date Selection  */}
             {step === 3 && (
               <motion.div
                 key="step3"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-                className="max-w-3xl mx-auto"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="max-w-5xl mx-auto pb-10"
               >
-                <h2 className="font-display text-2xl font-bold mb-2 text-center">
-                  Choisissez votre créneau
-                </h2>
-                <p className="text-muted-foreground text-center mb-8 normal-case tracking-normal">
-                  Sélectionnez une date et un horaire disponible
-                </p>
+                <style>{`
+                  .no-scrollbar::-webkit-scrollbar { display: none; }
+                  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+                `}</style>
 
-                {/* Calendar */}
-                <div className="glass-card p-6 mb-6">
-                  <div className="grid grid-cols-7 gap-2">
-                    {calendarDays.slice(0, 14).map((day, index) => (
-                      <motion.button
-                        key={index}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        disabled={!day.available}
-                        onClick={() => {
-                          setSelectedDate(day.date);
-                          setSelectedTime(null);
-                        }}
-                        className={`p-3 rounded-xl text-center transition-all ${
-                          !day.available
-                            ? 'opacity-30 cursor-not-allowed'
-                            : selectedDate?.toDateString() === day.date.toDateString()
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-secondary hover:bg-secondary/80'
-                        }`}
-                      >
-                        <span className="text-[10px] uppercase text-muted-foreground">
-                          {new Intl.DateTimeFormat('fr-FR', { weekday: 'short' }).format(day.date)}
-                        </span>
-                        <span className="block text-lg font-semibold">{day.date.getDate()}</span>
-                      </motion.button>
-                    ))}
-                  </div>
+                <div className="text-center mb-8">
+                  <h2 className="text-3xl font-bold font-display text-white">
+                    Planning
+                  </h2>
+                  <p className="text-muted-foreground mt-2">
+                    Sélectionnez votre date d'intervention
+                  </p>
                 </div>
 
-                {/* Time Slots */}
-                {selectedDate && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="glass-card p-6"
-                  >
-                    <h3 className="font-semibold mb-4">{formatDate(selectedDate)}</h3>
-                    <div className="flex flex-wrap gap-3">
-                      {calendarDays
-                        .find((d) => d.date.toDateString() === selectedDate.toDateString())
-                        ?.slots.map((time) => (
-                          <motion.button
-                            key={time}
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => setSelectedTime(time)}
-                            className={`px-6 py-3 rounded-xl font-medium transition-all ${
-                              selectedTime === time
-                                ? 'bg-primary text-primary-foreground'
-                                : 'bg-secondary hover:bg-secondary/80'
-                            }`}
-                          >
-                            {time}
-                          </motion.button>
-                        ))}
+                <div className="flex flex-col md:flex-row gap-6 items-stretch">
+                  
+                  {/* --- BLOC CALENDRIER (Gauche) --- */}
+                  <div className="w-full md:w-3/5 bg-[#0f0f0f] border border-white/10 rounded-3xl p-6 flex flex-col">
+                    <div className="flex items-center justify-between mb-6">
+                      <span className="text-lg font-bold capitalize text-white pl-2">
+                        {new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' }).format(currentMonth)}
+                      </span>
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={() => {
+                            const newDate = new Date(currentMonth);
+                            newDate.setMonth(newDate.getMonth() - 1);
+                            if (newDate >= new Date(new Date().setDate(1))) setCurrentMonth(newDate); 
+                          }}
+                          className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-white transition-colors"
+                        >
+                          <ChevronLeft className="w-4 h-4"/>
+                        </button>
+                        <button 
+                          onClick={() => {
+                            const newDate = new Date(currentMonth);
+                            newDate.setMonth(newDate.getMonth() + 1);
+                            setCurrentMonth(newDate);
+                          }}
+                          className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-white transition-colors"
+                        >
+                          <ChevronRight className="w-4 h-4"/>
+                        </button>
+                      </div>
                     </div>
-                  </motion.div>
-                )}
+
+                    <div className="grid grid-cols-7 mb-2">
+                      {['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((d, i) => (
+                        <div key={i} className="text-center text-xs font-bold text-gray-500 py-2">{d}</div>
+                      ))}
+                    </div>
+
+                    <div className="grid grid-cols-7 gap-1 sm:gap-2 content-start">
+                      {(() => {
+                        const year = currentMonth.getFullYear();
+                        const month = currentMonth.getMonth();
+                        const firstDayOfMonth = new Date(year, month, 1).getDay();
+                        const daysInMonth = new Date(year, month + 1, 0).getDate();
+                        const startDay = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
+                        const days = [];
+                        
+                        for (let i = 0; i < startDay; i++) days.push(<div key={`empty-${i}`} className="w-full aspect-square" />);
+
+                        for (let d = 1; d <= daysInMonth; d++) {
+                          const dateObj = new Date(year, month, d);
+                          const isSelected = selectedDate?.toDateString() === dateObj.toDateString();
+                          const isToday = new Date().toDateString() === dateObj.toDateString();
+                          const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
+                          const todayReset = new Date(); todayReset.setHours(0,0,0,0);
+                          const isPast = dateObj < todayReset;
+                          const isAvailable = !isWeekend && !isPast;
+
+                          days.push(
+                            <button
+                              key={d}
+                              disabled={!isAvailable}
+                              onClick={() => { setSelectedDate(dateObj); setSelectedTime(null); }}
+                              className={`w-full aspect-square relative rounded-xl flex items-center justify-center text-sm font-medium transition-all duration-200 ${
+                                isSelected
+                                  ? 'bg-primary text-white shadow-[0_0_15px_rgba(var(--primary),0.4)] z-10'
+                                  : !isAvailable
+                                  ? 'text-gray-700 cursor-not-allowed opacity-50'
+                                  : 'text-gray-300 hover:bg-white/10 hover:text-white bg-white/[0.02]'
+                              } ${isToday && !isSelected ? 'border border-primary/40 text-primary' : ''}`}
+                            >
+                              {d}
+                              {isAvailable && !isSelected && <div className="absolute bottom-1.5 w-1 h-1 rounded-full bg-white/30" />}
+                            </button>
+                          );
+                        }
+                        return days;
+                      })()}
+                    </div>
+                  </div>
+
+                  {/* --- BLOC HORAIRES (Droite) --- */}
+                  <div className="w-full md:w-2/5 bg-[#0f0f0f] border border-white/10 rounded-3xl p-6 flex flex-col">
+                    <div className="mb-4 pb-4 border-b border-white/10 flex-shrink-0">
+                       <h3 className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">Date sélectionnée</h3>
+                       <p className="text-white text-lg font-bold capitalize">
+                         {selectedDate 
+                           ? new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }).format(selectedDate)
+                           : 'Aucune date'}
+                       </p>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto no-scrollbar relative min-h-[300px]">
+                      <AnimatePresence mode="wait">
+                        {selectedDate ? (
+                          <motion.div
+                            key={selectedDate.toString()}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            className="space-y-3"
+                          >
+                            <h3 className="text-xs font-bold uppercase tracking-widest text-primary mb-3 mt-2">
+                              Créneaux disponibles
+                            </h3>
+                            
+                            {['09:00', '10:30', '14:00', '16:30'].map((time) => (
+                              <button
+                                key={time}
+                                onClick={() => setSelectedTime(time)}
+                                className={`w-full py-4 px-5 rounded-xl text-sm font-bold transition-all flex justify-between items-center ${
+                                  selectedTime === time
+                                    ? 'bg-primary text-white shadow-[0_0_20px_rgba(var(--primary),0.4)] scale-[1.02] border-primary' 
+                                    : 'bg-white/5 text-gray-300 hover:bg-white/10 hover:pl-6 border border-white/5'
+                                }`}
+                              >
+                                {time}
+                                {selectedTime === time && <Check className="w-4 h-4 text-white"/>}
+                              </button>
+                            ))}
+                            
+                            {/* 1. CALCUL DE LA DURÉE ESTIMÉE */}
+                            <div className="mt-6 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                              <p className="text-xs text-blue-200 flex gap-2 leading-relaxed">
+                                <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                                <span>
+                                  Durée estimée : <strong className="text-white">
+                                    {(() => {
+                                      let hours = 0;
+                                      // Base Pack
+                                      if (selectedPack === 'essentiel') hours += 2.5;
+                                      else if (selectedPack === 'renovation') hours += 7;
+                                      else if (selectedPack === 'ceramique') hours += 18;
+                                      
+                                      // + Options (45min par option)
+                                      hours += (selectedDetailingOptions.length + selectedMechanicOptions.length) * 0.75;
+                                      
+                                      // Ajustement taille véhicule
+                                      const vehicle = getVehicle();
+                                      if (vehicle) hours *= vehicle.priceModifier; // +15%, +30% etc.
+                                      
+                                      // Formatage
+                                      if (hours > 10) return Math.round(hours / 8) + ' jours';
+                                      const h = Math.floor(hours);
+                                      const m = Math.round((hours - h) * 60);
+                                      return `${h}h${m > 0 ? m : ''}`;
+                                    })()}
+                                  </strong>
+                                  . <br/>Merci d'arriver 5min avant.
+                                </span>
+                              </p>
+                            </div>
+                          </motion.div>
+                        ) : (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-600 text-center">
+                             <p>Veuillez choisir une date.</p>
+                          </div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  </div>
+                </div>
               </motion.div>
             )}
 
-            {/* Step 4: Confirmation */}
+            {/* Step 4: Coordonnées & Confirmation (Equal Height) */}
             {step === 4 && (
               <motion.div
                 key="step4"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-                className="max-w-2xl mx-auto"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="max-w-6xl mx-auto pb-10"
               >
-                <h2 className="font-display text-2xl font-bold mb-2 text-center">
-                  Récapitulatif
-                </h2>
-                <p className="text-muted-foreground text-center mb-8 normal-case tracking-normal">
-                  Vérifiez votre réservation avant confirmation
-                </p>
-
-                <div className="glass-card p-8">
-                  {/* Vehicle */}
-                  <div className="flex items-center justify-between py-4 border-b border-border">
-                    <div className="flex items-center gap-3">
-                      <Car className="w-5 h-5 text-muted-foreground" />
-                      <span>Véhicule</span>
-                    </div>
-                    <span className="font-semibold">{getVehicle()?.name}</span>
-                  </div>
-
-                  {/* Services */}
-                  <div className="py-4 border-b border-border">
-                    <div className="flex items-center gap-3 mb-3">
-                      <Sparkles className="w-5 h-5 text-muted-foreground" />
-                      <span>Prestations</span>
-                    </div>
-                    <div className="space-y-2 ml-8">
-                      {getAllSelectedServices().map((service, index) => (
-                        <div key={index} className="flex justify-between text-sm">
-                          <span>{service.name}</span>
-                          <span className="font-medium">{service.price}€</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Date */}
-                  <div className="flex items-center justify-between py-4 border-b border-border">
-                    <div className="flex items-center gap-3">
-                      <Calendar className="w-5 h-5 text-muted-foreground" />
-                      <span>Date & Heure</span>
-                    </div>
-                    <span className="font-semibold">
-                      {selectedDate && formatDate(selectedDate)} à {selectedTime}
-                    </span>
-                  </div>
-
-                  {/* Total */}
-                  <div className="flex items-center justify-between py-6">
-                    <span className="text-lg font-semibold">Total estimé</span>
-                    <span className="text-3xl font-bold text-primary">{calculateTotal()}€</span>
-                  </div>
-
-                  <button className="btn-premium w-full text-center mt-4">
-                    Confirmer la réservation
-                  </button>
-                  <p className="text-xs text-muted-foreground text-center mt-4">
-                    Paiement sur place. Annulation gratuite jusqu'à 24h avant.
+                <div className="text-center mb-10">
+                  <h2 className="text-3xl font-bold font-display text-white">
+                    Finalisation
+                  </h2>
+                  <p className="text-muted-foreground mt-2">
+                    Dernière étape avant de valider votre rendez-vous
                   </p>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
+                  
+                  {/* --- COLONNE GAUCHE : FORMULAIRE --- */}
+                  <div className="flex flex-col"> 
+                    
+                    <div className="bg-[#0f0f0f] border border-white/10 rounded-3xl p-6 md:p-8 h-full">
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="p-2 bg-primary/20 rounded-lg text-primary">
+                          <User className="w-5 h-5" />
+                        </div>
+                        <h3 className="text-xl font-bold text-white">Vos Coordonnées</h3>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-gray-400 ml-1">Prénom *</label>
+                          <div className="relative">
+                            <input
+                              type="text"
+                              name="firstName"
+                              value={formData.firstName}
+                              onChange={handleInputChange}
+                              placeholder="Jean"
+                              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 pl-10 text-white placeholder:text-gray-600 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary transition-all"
+                            />
+                            <User className="w-4 h-4 text-gray-500 absolute left-3 top-3.5" />
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-gray-400 ml-1">Nom *</label>
+                          <div className="relative">
+                            <input
+                              type="text"
+                              name="lastName"
+                              value={formData.lastName}
+                              onChange={handleInputChange}
+                              placeholder="Dupont"
+                              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 pl-10 text-white placeholder:text-gray-600 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary transition-all"
+                            />
+                            <User className="w-4 h-4 text-gray-500 absolute left-3 top-3.5" />
+                          </div>
+                        </div>
+
+                        <div className="md:col-span-2 space-y-2">
+                          <label className="text-sm font-medium text-gray-400 ml-1">Email *</label>
+                          <div className="relative">
+                            <input
+                              type="email"
+                              name="email"
+                              value={formData.email}
+                              onChange={handleInputChange}
+                              placeholder="jean.dupont@email.com"
+                              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 pl-10 text-white placeholder:text-gray-600 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary transition-all"
+                            />
+                            <Mail className="w-4 h-4 text-gray-500 absolute left-3 top-3.5" />
+                          </div>
+                        </div>
+
+                        <div className="md:col-span-2 space-y-2">
+                          <label className="text-sm font-medium text-gray-400 ml-1">Téléphone *</label>
+                          <div className="relative">
+                            <input
+                              type="tel"
+                              name="phone"
+                              value={formData.phone}
+                              onChange={handleInputChange}
+                              placeholder="06 12 34 56 78"
+                              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 pl-10 text-white placeholder:text-gray-600 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary transition-all"
+                            />
+                            <Phone className="w-4 h-4 text-gray-500 absolute left-3 top-3.5" />
+                          </div>
+                        </div>
+
+                        <div className="md:col-span-2 space-y-2 mt-2">
+                          <label className="text-sm font-medium text-gray-400 ml-1">Demande particulière (Optionnel)</label>
+                          <div className="relative">
+                            <textarea
+                              name="notes"
+                              value={formData.notes}
+                              onChange={handleInputChange}
+                              placeholder="Code d'accès, précisions sur le véhicule, siège bébé..."
+                              rows={3}
+                              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 pl-10 text-white placeholder:text-gray-600 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary transition-all resize-none"
+                            />
+                            <MessageSquare className="w-4 h-4 text-gray-500 absolute left-3 top-3.5" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* --- COLONNE DROITE : RÉCAPITULATIF --- */}
+                  <div className="flex flex-col">
+                    <div className="bg-[#0f0f0f] border border-white/10 rounded-3xl p-8 h-full flex flex-col justify-between">
+                      
+                      {/* Partie Haute du Ticket */}
+                      <div>
+                        <h3 className="text-xl font-bold font-display text-white mb-6 flex items-center gap-3">
+                          <span className="w-1.5 h-6 bg-primary rounded-full"/>
+                          Récapitulatif
+                        </h3>
+
+                        <div className="space-y-6">
+                          {/* 1. Véhicule */}
+                          <div className="flex items-start gap-4 p-4 rounded-2xl bg-white/5 border border-white/5">
+                             <div className="p-2 bg-black rounded-lg border border-white/10 text-gray-400">
+                               {(() => {
+                                 const v = getVehicle();
+                                 const Icon = v?.icon || Car;
+                                 return <Icon className="w-5 h-5" />;
+                               })()}
+                             </div>
+                             <div>
+                               <p className="text-xs text-gray-500 uppercase tracking-wider font-bold">Véhicule</p>
+                               <p className="text-white font-bold">{getVehicle()?.name || 'Non sélectionné'}</p>
+                             </div>
+                          </div>
+
+                          {/* 2. Date & Heure */}
+                          <div className="flex items-start gap-4 p-4 rounded-2xl bg-white/5 border border-white/5">
+                             <div className="p-2 bg-black rounded-lg border border-white/10 text-gray-400">
+                               <CalendarIcon className="w-5 h-5" />
+                             </div>
+                             <div>
+                               <p className="text-xs text-gray-500 uppercase tracking-wider font-bold">Date & Heure</p>
+                               <p className="text-white font-bold capitalize">
+                                 {selectedDate 
+                                   ? new Intl.DateTimeFormat('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }).format(selectedDate)
+                                   : '--'}
+                               </p>
+                               <p className="text-primary text-sm font-medium">
+                                 à {selectedTime || '--:--'}
+                               </p>
+                             </div>
+                          </div>
+
+                          <div className="border-t border-white/10 border-dashed my-2" />
+
+                          {/* 3. Liste des Services */}
+                          <div className="space-y-3">
+                            <div className="flex justify-between items-start">
+                              <span className="text-gray-300 font-medium">
+                                {detailingPacks.find(p => p.id === selectedPack)?.name}
+                              </span>
+                              <span className="text-white font-bold">
+                                {Math.round((detailingPacks.find(p => p.id === selectedPack)?.basePrice || 0) * (getVehicle()?.priceModifier || 1))}€
+                              </span>
+                            </div>
+
+                            {selectedDetailingOptions.map(id => {
+                              const opt = detailingOptions.find(o => o.id === id);
+                              if (!opt) return null;
+                              return (
+                                <div key={id} className="flex justify-between items-start text-sm text-gray-500">
+                                  <span>+ {opt.name}</span>
+                                  <span>{Math.round(opt.basePrice * (getVehicle()?.priceModifier || 1))}€</span>
+                                </div>
+                              );
+                            })}
+
+                            {selectedMechanicOptions.map(id => {
+                               const opt = mechanicOptions.find(o => o.id === id);
+                               if (!opt) return null;
+                               return (
+                                 <div key={id} className="flex justify-between items-start text-sm text-gray-500">
+                                   <span>+ {opt.name}</span>
+                                   <span>{opt.basePrice}€</span>
+                                 </div>
+                               );
+                            })}
+                          </div>
+
+                          <div className="border-t border-white/10 my-2" />
+
+                          {/* 4. TOTAL */}
+                          <div className="flex justify-between items-end mb-8">
+                            <span className="text-gray-400 font-medium mb-1">Total estimé</span>
+                            <span className="text-4xl font-bold text-primary tracking-tight">
+                              {calculateTotal()}€
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Partie Basse (Bouton) */}
+                      <div>
+                        <button 
+                          disabled={!isFormValid}
+                          className={`w-full py-4 rounded-xl font-bold text-lg transition-all flex items-center justify-center gap-2 ${
+                            isFormValid 
+                              ? 'bg-primary text-white hover:bg-primary/90 shadow-[0_0_20px_rgba(var(--primary),0.3)] transform hover:-translate-y-1' 
+                              : 'bg-white/10 text-gray-500 cursor-not-allowed border border-white/5'
+                          }`}
+                        >
+                          {isFormValid ? (
+                            <>Confirmer le RDV <ChevronRight className="w-5 h-5" /></>
+                          ) : (
+                            'Remplissez vos infos'
+                          )}
+                        </button>
+
+                        <p className="text-center text-xs text-gray-600 mt-4">
+                          Paiement sur place • Annulation gratuite jusqu'à 24h
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </motion.div>
             )}
