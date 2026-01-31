@@ -135,12 +135,12 @@ export const Footer = () => {
             © 2026 Prestige Detailing & Mécanique. Tous droits réservés.
           </p>
           <div className="flex gap-6">
-            <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Mentions légales
-            </a>
-            <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Politique de confidentialité
-            </a>
+            <Link to="/mentions-legales" className="text-gray-500 hover:text-primary transition-colors">
+              Mentions Légales
+            </Link>
+            <Link to="/cgv" className="text-gray-500 hover:text-primary transition-colors">
+              CGV
+            </Link>
           </div>
         </div>
       </div>

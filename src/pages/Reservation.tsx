@@ -1,1075 +1,614 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
+import SeoHead from '@/components/SeoHead';
+
 import { 
-  CarFront, 
-  Truck, 
-  Van, 
-  Car,
-  ChevronRight, 
-  ChevronLeft, 
-  Calendar as CalendarIcon, 
-  Check, 
-  Sparkles, 
-  Shield, 
-  Droplet, 
-  Wrench, 
-  Disc, 
-  Gauge, 
-  Clock, 
-  Crown, 
-  Settings,
-  Calendar, 
-  Info,
-  User,
-  Mail,
-  Phone,
-  MessageSquare
+  CarFront, Truck, Car, ChevronRight, ChevronLeft, Calendar as CalendarIcon, 
+  Check, Sparkles, Shield, Droplet, Wrench, Disc, Settings, User, 
+  ArrowRight, Clock, Info
 } from 'lucide-react';
 
+// --- DONNÉES ---
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Accepte: 0612345678, 06 12 34 56 78, 06.12.34.56.78, +33 6 12...
+const phoneRegex = /^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$/;
 
-// Vehicle types
 const vehicleTypes = [
-  {
-    id: 'citadine',
-    name: 'Citadine',
-    description: 'Petites voitures compactes',
-    examples: 'Clio, 208, Polo',
-    priceModifier: 1,
-    icon: CarFront,
-  },
-  {
-    id: 'berline',
-    name: 'Berline / Coupé',
-    description: 'Véhicules standards',
-    examples: 'Classe C, A4, Serie 3',
-    priceModifier: 1.15,
-    icon: Car,
-  },
-  {
-    id: 'suv',
-    name: 'SUV / Break',
-    description: 'Véhicules de taille moyenne',
-    examples: 'X3, Q5, GLC',
-    priceModifier: 1.3,
-    icon: Truck,
-  },
-  {
-    id: 'premium',
-    name: 'Premium / Utilitaire',
-    description: 'Grands véhicules',
-    examples: 'Classe S, X5, Range Rover',
-    priceModifier: 1.5,
-    icon: Van,
-  },
+  { id: 'citadine', name: 'Citadine / Compacte', description: '2 à 4 places (ex: Clio, 208, Golf)', icon: CarFront },
+  { id: 'berline', name: 'Berline / Break', description: '4 à 5 places (ex: Serie 3, Passat, A4)', icon: Car },
+  { id: 'suv', name: 'SUV / Monospace', description: '7 places / Grand volume (ex: X5, Q7)', icon: Truck },
 ];
 
-// Detailing Packs (only one can be selected)
+const pricingMatrix: { [key: string]: { [key: string]: number } } = {
+  'entretien': { citadine: 120, berline: 140, suv: 220 },
+  'sale': { citadine: 140, berline: 160, suv: 0 },
+  'tres_sale': { citadine: 180, berline: 220, suv: 0 },
+  'polissage_1': { citadine: 280, berline: 330, suv: 380 },
+  'polissage_2': { citadine: 450, berline: 520, suv: 600 },
+  'ceramique_gyeon': { citadine: 450, berline: 750, suv: 850 },
+};
+
 const detailingPacks = [
-  {
-    id: 'essentiel',
-    name: 'Pack Essentiel',
-    basePrice: 89,
-    duration: '2-3h',
-    icon: Droplet,
-    features: ['Lavage extérieur', 'Aspiration intérieure', 'Vitres', 'Jantes'],
-  },
-  {
-    id: 'renovation',
-    name: 'Pack Rénovation',
-    basePrice: 249,
-    duration: '1 jour',
-    icon: Sparkles,
-    features: ['Pack Essentiel +', 'Polissage 1 étape', 'Shampoing sièges', 'Protection cire'],
-    popular: true,
-  },
-  {
-    id: 'ceramique',
-    name: 'Pack Céramique',
-    basePrice: 599,
-    duration: '2-3 jours',
-    icon: Shield,
-    features: ['Pack Rénovation +', 'Polissage 2 étapes', 'Céramique 9H', 'Garantie 3 ans'],
-  },
+  { id: 'entretien', name: 'Formule Entretien', category: 'Intérieur', durationHours: 2.5, icon: Droplet, features: ['Aspiration habitacle', 'Dépoussiérage tableau de bord', 'Vitres intérieures'] },
+  { id: 'sale', name: 'Formule Sale', category: 'Intérieur', durationHours: 4, icon: Sparkles, features: ['Formule Entretien +', 'Shampoing sièges/moquettes', 'Nettoyage plastiques', 'Odeurs léger'], popular: true },
+  { id: 'tres_sale', name: 'Formule Très Sale', category: 'Intérieur', durationHours: 6, icon: Shield, features: ['Formule Sale +', 'Extraction injecteur', 'Poils animaux', 'Désinfection'] },
+  { id: 'polissage_1', name: 'Polissage 1 Étape', category: 'Extérieur', durationHours: 8, icon: Sparkles, features: ['Correction légère', 'Brillance complète'] },
+  { id: 'polissage_2', name: 'Polissage 2 Étapes', category: 'Extérieur', durationHours: 16, icon: Disc, features: ['Correction avancée', 'Suppression micro-rayures'] },
+  { id: 'ceramique_gyeon', name: 'Céramique GYEON', category: 'Protection', durationHours: 24, icon: Shield, features: ['Protection 6-12 mois', 'Anti-UV & Pluies acides'] },
 ];
 
-// Detailing Options
 const detailingOptions = [
-  { 
-    id: 'phares', 
-    name: 'Rénovation phares', 
-    basePrice: 79, 
-    icon: Crown, 
-    desc: 'Restauration clarté & protection UV' 
-  },
-  { 
-    id: 'cuir', 
-    name: 'Traitement cuir complet', 
-    basePrice: 149, 
-    icon: Sparkles, 
-    desc: 'Nettoyage profond & soin nourrissant' 
-  },
-  { 
-    id: 'ozone', 
-    name: 'Traitement anti-odeur ozone', 
-    basePrice: 49, 
-    icon: Settings, 
-    desc: 'Désinfection & destruction odeurs' 
-  },
-  { 
-    id: 'jantes_ceramique', 
-    name: 'Céramique jantes', 
-    basePrice: 99, 
-    icon: Disc, 
-    desc: 'Protection H.T. & facilité de lavage' 
-  },
+  { id: 'lessivage', name: 'Lessivage Sièges', basePrice: 15, icon: Droplet, desc: 'Extraction injecteur', durationHours: 1 },
+  { id: 'poils', name: 'Poils Animaux', basePrice: 30, icon: Settings, desc: 'Supplément si excessif', durationHours: 1 },
+  { id: 'desinfection', name: 'Désinfection / Odeurs', basePrice: 49, icon: Sparkles, desc: 'Traitement vapeur/ozone', durationHours: 0.5 },
 ];
 
-// Mechanic Options 
 const mechanicOptions = [
-  { 
-    id: 'vidange', 
-    name: 'Vidange + Filtre', 
-    basePrice: 79, 
-    icon: Droplet, 
-    desc: 'Huile constructeur & remplacement filtre' 
-  },
-  { 
-    id: 'plaquettes_av', 
-    name: 'Plaquettes AV', 
-    basePrice: 89, 
-    icon: Disc, 
-    desc: 'Remplacement jeu avant complet' 
-  },
-  { 
-    id: 'plaquettes_ar', 
-    name: 'Plaquettes AR', 
-    basePrice: 79, 
-    icon: Disc, 
-    desc: 'Remplacement jeu arrière complet' 
-  },
-  { 
-    id: 'geometrie', 
-    name: 'Géométrie', 
-    basePrice: 89, 
-    icon: Gauge, 
-    desc: 'Réglage parallélisme & direction' 
-  },
-  { 
-    id: 'diagnostic', 
-    name: 'Diagnostic', 
-    basePrice: 49, 
-    icon: Wrench, 
-    desc: 'Lecture codes défauts & bilan santé' 
-  },
+  { id: 'vidange', name: 'Vidange + Filtre', basePrice: 79, icon: Droplet, desc: 'Huile constructeur', durationHours: 1 },
+  { id: 'freinage', name: 'Freinage (Plaquettes)', basePrice: 89, icon: Disc, desc: 'Jeu avant ou arrière', durationHours: 1 },
+  { id: 'diag', name: 'Diagnostic Élec.', basePrice: 49, icon: Wrench, desc: 'Lecture codes défauts', durationHours: 0.5 },
 ];
-
 
 const Reservation = () => {
   const [step, setStep] = useState(1);
   const [selectedVehicle, setSelectedVehicle] = useState<string | null>(null);
-  const [selectedPack, setSelectedPack] = useState<string | null>('renovation');
+  const [selectedPack, setSelectedPack] = useState<string | null>('sale');
   const [selectedDetailingOptions, setSelectedDetailingOptions] = useState<string[]>([]);
   const [selectedMechanicOptions, setSelectedMechanicOptions] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
-
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    notes: ''
-  });
-
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [monthReservations, setMonthReservations] = useState<any[]>([]);
+  const [formData, setFormData] = useState({ firstName: '', lastName: '', email: '', phone: '', notes: '' });
   const totalSteps = 4;
+  const isEmailValid = (email: string) => emailRegex.test(email);
+  const isPhoneValid = (phone: string) => phoneRegex.test(phone);
 
-  // --- 2. LES EFFETS (useEffect) ---
-  useEffect(() => {
-    const findNextAvailableDate = () => {
-      let date = new Date();
-      date.setDate(date.getDate() + 1); 
-      while (date.getDay() === 0 || date.getDay() === 6) {
-        date.setDate(date.getDate() + 1);
-      }
-      return date;
-    };
-
-    const nextDate = findNextAvailableDate();
-    setSelectedDate(nextDate);
-    setCurrentMonth(nextDate);
-  }, []);
-
-  // --- 3. LES FONCTIONS UTILITAIRES ---
-  const getVehicle = () => vehicleTypes.find((v) => v.id === selectedVehicle);
+  // --- LOGIQUE METIER ---
+  const getPackPrice = (packId: string, vehicleId: string | null) => {
+    if (!vehicleId || !pricingMatrix[packId]) return 0;
+    return pricingMatrix[packId][vehicleId];
+  };
 
   const calculateTotal = () => {
-    const vehicle = getVehicle();
-    if (!vehicle) return 0;
-
+    if (!selectedVehicle) return 0;
     let total = 0;
-    
-    // Pack
-    const pack = detailingPacks.find((p) => p.id === selectedPack);
-    if (pack) total += pack.basePrice * vehicle.priceModifier;
-    
-    // Options Detailing
-    selectedDetailingOptions.forEach((optionId) => {
-      const option = detailingOptions.find((o) => o.id === optionId);
-      if (option) total += option.basePrice * vehicle.priceModifier;
+    if (selectedPack) total += getPackPrice(selectedPack, selectedVehicle);
+    selectedDetailingOptions.forEach(id => { const opt = detailingOptions.find(o => o.id === id); if (opt) total += opt.basePrice; });
+    selectedMechanicOptions.forEach(id => { const opt = mechanicOptions.find(o => o.id === id); if (opt) total += opt.basePrice; });
+    return total;
+  };
+
+  const isSurDevis = useMemo(() => {
+    if (!selectedVehicle || !selectedPack) return false;
+    return getPackPrice(selectedPack, selectedVehicle) === 0;
+  }, [selectedPack, selectedVehicle]);
+
+  const totalDuration = useMemo(() => {
+    let h = detailingPacks.find(p => p.id === selectedPack)?.durationHours || 2;
+    selectedDetailingOptions.forEach(id => h += detailingOptions.find(o => o.id === id)?.durationHours || 0);
+    selectedMechanicOptions.forEach(id => h += mechanicOptions.find(o => o.id === id)?.durationHours || 0);
+    if (selectedVehicle === 'suv') h *= 1.2;
+    return Math.round(h * 2) / 2;
+  }, [selectedPack, selectedDetailingOptions, selectedMechanicOptions, selectedVehicle]);
+
+  // Helper pour formater la durée (ex: 2.5 -> "2h30")
+  const formatDuration = (hours: number) => {
+    const h = Math.floor(hours);
+    const m = Math.round((hours - h) * 60);
+    if (h > 10) return `${Math.ceil(h/8)} jours`; // Si très long
+    return `${h}h${m > 0 ? m : ''}`;
+  };
+
+  // --- LOGIQUE CALENDRIER ---
+  const changeMonth = (offset: number) => {
+    setCurrentMonth(prev => {
+      const newDate = new Date(prev);
+      newDate.setDate(1); 
+      newDate.setMonth(newDate.getMonth() + offset);
+      return newDate;
     });
-    
-    // Options Meca
-    selectedMechanicOptions.forEach((optionId) => {
-      const option = mechanicOptions.find((o) => o.id === optionId);
-      if (option) total += option.basePrice;
+    setSelectedDate(null);
+    setSelectedTime(null);
+  };
+
+  useEffect(() => {
+    const fetchMonthData = async () => {
+      const startOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+      const endOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0, 23, 59, 59);
+      const bufferStart = new Date(startOfMonth); bufferStart.setDate(bufferStart.getDate() - 5);
+      const bufferEnd = new Date(endOfMonth); bufferEnd.setDate(bufferEnd.getDate() + 5);
+
+      const { data } = await supabase
+        .from('reservations')
+        .select('start_at, end_at')
+        .neq('status', 'cancelled')
+        .or(`start_at.lte.${bufferEnd.toISOString()},end_at.gte.${bufferStart.toISOString()}`);
+
+      setMonthReservations(data || []);
+    };
+    fetchMonthData();
+  }, [currentMonth]);
+
+  const timeSlots = useMemo(() => {
+    const slots = [];
+    for (let h = 9; h <= 12; h += 0.5) slots.push(`${Math.floor(h).toString().padStart(2, '0')}:${h % 1 === 0 ? '00' : '30'}`);
+    for (let h = 13.5; h <= 18.5; h += 0.5) slots.push(`${Math.floor(h).toString().padStart(2, '0')}:${h % 1 === 0 ? '00' : '30'}`);
+    return slots;
+  }, []);
+
+  const calculateEndDate = (startDate: Date, durationHours: number) => {
+    let end = new Date(startDate);
+    let remaining = durationHours;
+    while (remaining > 0) {
+      end.setMinutes(end.getMinutes() + 30);
+      const h = end.getHours() + end.getMinutes() / 60;
+      const isWeekend = end.getDay() === 0;
+      if (h > 19 || h < 9 || (h > 12.5 && h < 13.5) || isWeekend) {
+        if (h > 19) { end.setDate(end.getDate() + 1); end.setHours(9, 0, 0, 0); }
+        else if (h > 12.5 && h < 13.5) { end.setHours(13, 30, 0, 0); }
+        else if (isWeekend) { end.setDate(end.getDate() + 1); end.setHours(9, 0, 0, 0); }
+        continue;
+      }
+      remaining -= 0.5;
+    }
+    return end;
+  };
+
+  const isRangeAvailable = (start: Date, end: Date) => {
+    for (const res of monthReservations) {
+      const resStart = new Date(res.start_at);
+      const resEnd = new Date(res.end_at);
+      if (start < resEnd && end > resStart) return false;
+    }
+    return true;
+  };
+
+  const isDayAvailable = (date: Date) => {
+    const today = new Date(); today.setHours(0,0,0,0);
+    if (date < today || date.getDay() === 0) return false;
+
+    // Optimisation rapide
+    const dayStart = new Date(date); dayStart.setHours(9,0,0,0);
+    const dayEnd = new Date(date); dayEnd.setHours(19,0,0,0);
+    for (const res of monthReservations) {
+      if (new Date(res.start_at) <= dayStart && new Date(res.end_at) >= dayEnd) return false;
+    }
+
+    // Simulation réelle
+    const slotsToCheck = [];
+    for (let h = 9; h <= 12; h += 0.5) slotsToCheck.push(h);
+    for (let h = 13.5; h <= 18.5; h += 0.5) slotsToCheck.push(h);
+
+    return slotsToCheck.some(h => {
+      const simStart = new Date(date);
+      simStart.setHours(Math.floor(h), (h % 1) * 60, 0, 0);
+      const simEnd = calculateEndDate(simStart, totalDuration);
+      return isRangeAvailable(simStart, simEnd);
     });
-    
-    return Math.round(total);
   };
 
-  const toggleDetailingOption = (optionId: string) => {
-    setSelectedDetailingOptions((prev) =>
-      prev.includes(optionId) ? prev.filter((id) => id !== optionId) : [...prev, optionId]
-    );
-  };
+  const handleSubmit = async () => {
+    if (!selectedDate || !selectedTime) return;
+    const startDate = new Date(selectedDate);
+    const [h, m] = selectedTime.split(':').map(Number);
+    startDate.setHours(h, m, 0, 0);
+    const endDate = calculateEndDate(startDate, totalDuration);
 
-  const toggleMechanicOption = (optionId: string) => {
-    setSelectedMechanicOptions((prev) =>
-      prev.includes(optionId) ? prev.filter((id) => id !== optionId) : [...prev, optionId]
-    );
-  };
+    const { data, error } = await supabase.rpc('reserve_multi_day', {
+      p_client_name: `${formData.firstName} ${formData.lastName}`,
+      p_client_email: formData.email,
+      p_client_phone: formData.phone || null,
+      p_start_at: startDate.toISOString(),
+      p_end_at: endDate.toISOString(),
+      p_service_name: detailingPacks.find(p => p.id === selectedPack)?.name || "Détailing",
+      p_total_price: isSurDevis ? 0 : calculateTotal(),
+      p_duration: totalDuration,
+      p_vehicle_info: { type: selectedVehicle, label: vehicleTypes.find(v => v.id === selectedVehicle)?.name },
+      p_service_details: { pack: selectedPack, detailing_options: selectedDetailingOptions, mechanic_options: selectedMechanicOptions, notes: formData.notes, is_sur_devis: isSurDevis }
+    });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const isFormValid = formData.firstName && formData.lastName && formData.email && formData.phone;
-
-  const canProceed = () => {
-    switch (step) {
-      case 1: return selectedVehicle !== null;
-      case 2: return selectedPack !== null; // Simplifié pour la démo
-      case 3: return selectedDate !== null && selectedTime !== null;
-      case 4: return true;
-      default: return false;
+    if (error || data?.error) {
+      toast.error(data?.error || "Erreur de connexion.");
+      const { data: newData } = await supabase.from('reservations').select('start_at, end_at').neq('status', 'cancelled');
+      if (newData) setMonthReservations(newData);
+    } else {
+      setIsSuccess(true);
+      toast.success("Réservation effectuée !");
     }
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const isFormValid = 
+  formData.firstName.length >= 2 &&
+    formData.lastName.length >= 2 &&
+    isEmailValid(formData.email) &&
+    isPhoneValid(formData.phone);  
+    
+  const canProceed = () => {
+    if (step === 1) return selectedVehicle !== null;
+    if (step === 2) return selectedPack !== null;
+    if (step === 3) return selectedDate !== null && selectedTime !== null;
+    return true;
+  };
+
   return (
-    <div>
-      {/* Hero */}
-      <section className="pt-32 pb-8 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-[600px] h-[400px] bg-primary/5 rounded-full blur-3xl" />
-        <div className="container px-4 md:px-6 relative">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-center max-w-3xl mx-auto"
-          >
-            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-card border border-white/10 text-sm text-primary mb-6">
-              <Calendar className="w-4 h-4" />
-              Réservation en ligne
-            </span>
-
-            <h1 className="font-display text-4xl sm:text-5xl md:text-7xl font-bold mb-6 text-white tracking-tight leading-tight">
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-primary to-gray-400">
-                Réservez <br />
+    <>
+      <SeoHead 
+        title="Réserver votre prestation en ligne"
+        description="Choisissez votre formule et votre créneau en ligne. Réservation simple et rapide pour l'entretien esthétique de votre véhicule."
+      />
+      
+      <div className="flex flex-col min-h-screen">
+        {/* Hero */}
+        <section className="pt-32 pb-8 relative overflow-hidden flex-shrink-0">
+          <div className="absolute top-0 right-0 w-[600px] h-[400px] bg-primary/5 rounded-full blur-3xl" />
+          <div className="container px-4 md:px-6 relative">
+            <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="text-center max-w-3xl mx-auto">
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-card border border-white/10 text-sm text-primary mb-6">
+                <CalendarIcon className="w-4 h-4" /> Réservation en ligne
               </span>
-              Votre Créneau
-            </h1>
-            <p className="text-base md:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed px-2">
-              Configurez votre prestation en quelques clics
-            </p>
-          </motion.div>
-        </div>
-      </section>
+              <h1 className="font-display text-4xl sm:text-5xl md:text-7xl font-bold mb-6 text-white tracking-tight leading-tight">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-primary to-gray-400">Réservez <br /></span> Votre Créneau
+              </h1>
+            </motion.div>
+          </div>
+        </section>
 
-      {/* Progress Bar */}
-      <div className="sticky top-20 z-30 bg-background/80 backdrop-blur-xl border-b border-border">
-        <div className="container px-4 md:px-6 py-4">
-          <div className="flex items-center justify-between max-w-2xl mx-auto">
-            {['Véhicule', 'Prestations', 'Date', 'Confirmation'].map((label, index) => (
-              <div key={label} className="flex items-center">
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
-                    step > index + 1
-                      ? 'bg-primary text-primary-foreground'
-                      : step === index + 1
-                      ? 'bg-primary text-primary-foreground shadow-glow'
-                      : 'bg-secondary text-muted-foreground'
-                  }`}
-                >
-                  {step > index + 1 ? <Check className="w-4 h-4" /> : index + 1}
+        {/* Progress Bar */}
+        <div className="sticky top-20 z-30 bg-background/80 backdrop-blur-xl border-b border-border flex-shrink-0">
+          <div className="container px-4 md:px-6 py-4">
+            <div className="flex items-center justify-between max-w-2xl mx-auto">
+              {['Véhicule', 'Prestations', 'Date', 'Confirmation'].map((label, index) => (
+                <div key={label} className="flex items-center">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${step > index + 1 ? 'bg-primary text-primary-foreground' : step === index + 1 ? 'bg-primary text-primary-foreground shadow-glow' : 'bg-secondary text-muted-foreground'}`}>
+                    {step > index + 1 ? <Check className="w-4 h-4" /> : index + 1}
+                  </div>
+                  <span className={`hidden sm:block ml-2 text-sm ${step === index + 1 ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>{label}</span>
+                  {index < 3 && <div className={`hidden sm:block w-12 h-px mx-4 ${step > index + 1 ? 'bg-primary' : 'bg-border'}`} />}
                 </div>
-                <span className={`hidden sm:block ml-2 text-sm ${step === index + 1 ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
-                  {label}
-                </span>
-                {index < 3 && (
-                  <div className={`hidden sm:block w-12 h-px mx-4 ${step > index + 1 ? 'bg-primary' : 'bg-border'}`} />
-                )}
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <section className="py-12 min-h-[60vh]">
-        <div className="container px-4 md:px-6">
-          <AnimatePresence mode="wait">
-            {/* Step 1: Vehicle Selection */}
-            {step === 1 && (
-              <motion.div
-                key="step1"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-                className="max-w-4xl mx-auto"
-              >
-                <h2 className="font-display text-2xl font-bold mb-2 text-center">
-                  Quel type de véhicule ?
-                </h2>
-                <p className="text-muted-foreground text-center mb-8 normal-case tracking-normal">
-                  Le tarif est ajusté selon la taille de votre véhicule
-                </p>
-
-                <div className="grid sm:grid-cols-2 gap-4">
-                  {vehicleTypes.map((vehicle) => (
-                    <motion.button
-                      key={vehicle.id}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => setSelectedVehicle(vehicle.id)}
-                      className={`glass-card p-6 text-left transition-all ${
-                        selectedVehicle === vehicle.id
-                          ? 'border-primary shadow-glow'
-                          : 'hover:border-primary/30'
-                      }`}
-                    >
-                      <div className="flex items-start gap-4">
-                        <vehicle.icon className={`w-8 h-8 mt-1  ${selectedVehicle === vehicle.id ? 'text-primary' : 'text-muted-foreground'}`} />
-                        <div className="flex-1">
-                          <h3 className="font-display font-semibold text-lg">{vehicle.name}</h3>
-                          <p className="text-sm text-muted-foreground mb-1">{vehicle.description}</p>
-                          <p className="text-xs text-muted-foreground">{vehicle.examples}</p>
-                        </div>
-                        {selectedVehicle === vehicle.id && (
-                          <Check className="w-5 h-5 text-primary" />
-                        )}
-                      </div>
-                    </motion.button>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-
-            {/* --- STEP 2: PRESTATIONS  --- */}
-            {step === 2 && (
-              <motion.div
-                key="step2"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="max-w-3xl mx-auto"
-              >
-                <div className="text-center mb-10">
-                  <h2 className="text-3xl font-bold font-display text-white">Sélection des Services</h2>
-                  <p className="text-muted-foreground mt-2">Construisez votre formule idéale</p>
-                </div>
-
-                {/* SECTION 1 : PACK PRINCIPAL  */}
-                <div className="mb-12">
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4 pl-2 flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
-                    1. Choisissez votre base (Obligatoire)
-                  </h3>
-                  
-                  <div className="bg-[#0f0f0f] border border-white/10 rounded-2xl overflow-hidden divide-y divide-white/5">
-                    {detailingPacks.map((pack) => {
-                      const isSelected = selectedPack === pack.id;
-                      const price = Math.round(pack.basePrice * (getVehicle()?.priceModifier || 1));
-
-                      return (
-                        <motion.div
-                          layout 
-                          key={pack.id}
-                          onClick={() => setSelectedPack(pack.id)}
-                          className={`relative cursor-pointer transition-colors duration-300 group ${
-                            isSelected ? 'bg-white/[0.04]' : 'hover:bg-white/[0.02]'
-                          }`}
-                        >
-                          <div className="p-5 flex items-start gap-5">
-                            
-                            {/* ICÔNE */}
-                            <div className={`flex-shrink-0 p-3 rounded-xl transition-all duration-300 ${
-                              isSelected 
-                                ? 'bg-primary text-white shadow-[0_0_20px_rgba(var(--primary),0.3)] scale-110' 
-                                : 'bg-white/5 text-gray-500 group-hover:bg-white/10 group-hover:text-gray-300'
-                            }`}>
-                              <pack.icon className="w-6 h-6" />
-                            </div>
-
-                            <div className="flex-1 pt-1">
-                              <div className="flex justify-between items-start">
-                                <div className="flex flex-col">
-                                  <div className="flex items-center gap-3">
-                                    <h4 className={`text-lg font-bold transition-colors ${isSelected ? 'text-white' : 'text-gray-300'}`}>
-                                      {pack.name}
-                                    </h4>
-                                    {/* BADGE POPULAIRE */}
-                                    {pack.popular && (
-                                      <span className="text-[10px] font-bold uppercase tracking-wider bg-primary/20 text-primary px-2 py-0.5 rounded-full border border-primary/20">
-                                        Recommandé
-                                      </span>
-                                    )}
-                                  </div>
-                                  
-                                  {/* Résumé court */}
-                                  {!isSelected && (
-                                    <motion.p 
-                                      initial={{ opacity: 0 }} 
-                                      animate={{ opacity: 1 }} 
-                                      className="text-sm text-muted-foreground mt-1"
-                                    >
-                                      {pack.features.slice(0, 3).join(' • ')}...
-                                    </motion.p>
-                                  )}
-                                </div>
-
-                                <div className="text-right">
-                                  <span className={`block text-xl font-bold transition-colors ${isSelected ? 'text-primary' : 'text-white'}`}>
-                                    {price}€
-                                  </span>
-                                </div>
+        {/* Main Content */}
+        <section className="py-12 flex-grow">
+          <div className="container px-4 md:px-6">
+            <AnimatePresence mode="wait">
+              {isSuccess ? (
+                <motion.div key="success" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-2xl mx-auto text-center py-20 px-4">
+                  <div className="relative mb-10">
+                    <div className="absolute inset-0 bg-primary/20 blur-[100px] rounded-full" />
+                    <div className="relative w-24 h-24 bg-primary rounded-3xl flex items-center justify-center mx-auto shadow-[0_0_50px_rgba(var(--primary-rgb),0.5)]">
+                      <Check className="w-12 h-12 text-white" strokeWidth={3} />
+                    </div>
+                  </div>
+                  <h2 className="text-4xl md:text-5xl font-display font-black text-white mb-6">DEMANDE <span className="text-primary">ENREGISTRÉE</span></h2>
+                  <p className="text-gray-400 text-lg mb-10 leading-relaxed">
+                    Merci <span className="text-white font-bold">{formData.firstName}</span>. Votre demande pour le <span className="text-white font-bold">{selectedDate && new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long' }).format(selectedDate)}</span> est bien arrivée.
+                  </p>
+                  <button onClick={() => window.location.href = '/'} className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors font-bold">Retour à l'accueil <ArrowRight className="w-4 h-4" /></button>
+                </motion.div>
+              ) : (
+                <>
+                  {/* STEP 1: VEHICLE */}
+                  {step === 1 && (
+                    <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="max-w-4xl mx-auto">
+                      <h2 className="font-display text-2xl font-bold mb-8 text-center">Quel type de véhicule ?</h2>
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        {vehicleTypes.map((vehicle) => (
+                          <motion.button
+                            key={vehicle.id}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => setSelectedVehicle(vehicle.id)}
+                            className={`glass-card p-6 text-left transition-all ${selectedVehicle === vehicle.id ? 'border-primary shadow-glow' : 'hover:border-primary/30'}`}
+                          >
+                            <div className="flex items-start gap-4">
+                              <vehicle.icon className={`w-8 h-8 mt-1 ${selectedVehicle === vehicle.id ? 'text-primary' : 'text-muted-foreground'}`} />
+                              <div className="flex-1">
+                                <h3 className="font-display font-semibold text-lg">{vehicle.name}</h3>
+                                <p className="text-sm text-muted-foreground mb-1">{vehicle.description}</p>
                               </div>
-                              
-                              {/* ACCORDÉON DÉTAILS */}
-                              <AnimatePresence>
-                                {isSelected && (
-                                  <motion.div
-                                    initial={{ height: 0, opacity: 0 }}
-                                    animate={{ height: 'auto', opacity: 1 }}
-                                    exit={{ height: 0, opacity: 0 }}
-                                    className="overflow-hidden"
-                                  >
-                                    <div className="pt-4 mt-3 border-t border-white/5">
-                                      <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                        INCLUS DANS CE PACK :
-                                      </p>
-                                      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4">
-                                        {pack.features.map((f, i) => (
-                                          <li key={i} className="flex items-start gap-2 text-sm text-gray-300">
-                                            <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                                            <span className="opacity-90">{f}</span>
-                                          </li>
-                                        ))}
-                                      </ul>
-                                      <div className="mt-4 flex items-center gap-2 text-xs text-primary font-medium bg-primary/10 w-fit px-3 py-1.5 rounded-full">
-                                        <Clock className="w-3 h-3" />
-                                        Durée estimée : {pack.duration}
+                              {selectedVehicle === vehicle.id && <Check className="w-5 h-5 text-primary" />}
+                            </div>
+                          </motion.button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* STEP 2: PACKS & OPTIONS */}
+                  {step === 2 && (
+                    <motion.div key="step2" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="max-w-3xl mx-auto">
+                      <div className="text-center mb-10">
+                        <h2 className="text-3xl font-bold font-display text-white">Sélection des Services</h2>
+                        <p className="text-muted-foreground mt-2">Tarifs adaptés pour : <span className="text-primary font-bold capitalize">{vehicleTypes.find(v => v.id === selectedVehicle)?.name}</span></p>
+                      </div>
+                      <div className="space-y-12">
+                        {['Intérieur', 'Extérieur', 'Protection'].map(category => (
+                          <div key={category}>
+                            <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4 pl-2 flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-primary"></span>{category}</h3>
+                            <div className="bg-[#0f0f0f] border border-white/10 rounded-2xl overflow-hidden divide-y divide-white/5">
+                              {detailingPacks.filter(p => p.category === category).map((pack) => {
+                                const isSelected = selectedPack === pack.id;
+                                const price = getPackPrice(pack.id, selectedVehicle);
+                                return (
+                                  <motion.div layout key={pack.id} onClick={() => setSelectedPack(pack.id)} className={`relative cursor-pointer transition-colors duration-300 group ${isSelected ? 'bg-white/[0.04]' : 'hover:bg-white/[0.02]'}`}>
+                                    <div className="p-5 flex items-start gap-5">
+                                      <div className={`flex-shrink-0 p-3 rounded-xl transition-all duration-300 ${isSelected ? 'bg-primary text-white shadow-[0_0_20px_rgba(var(--primary),0.3)] scale-110' : 'bg-white/5 text-gray-500 group-hover:bg-white/10 group-hover:text-gray-300'}`}><pack.icon className="w-6 h-6" /></div>
+                                      <div className="flex-1 pt-1">
+                                        <div className="flex justify-between items-start">
+                                          <div><h4 className={`text-lg font-bold transition-colors ${isSelected ? 'text-white' : 'text-gray-300'}`}>{pack.name}</h4>{!isSelected && <p className="text-sm text-muted-foreground mt-1">{pack.features.slice(0, 2).join(' • ')}...</p>}</div>
+                                          <div className="text-right"><span className={`block text-lg font-bold transition-colors ${isSelected ? 'text-primary' : 'text-white'}`}>{price === 0 ? 'Sur Devis' : `${price}€`}</span></div>
+                                        </div>
+                                        <AnimatePresence>
+                                          {isSelected && (
+                                            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                                              <div className="pt-4 mt-3 border-t border-white/5"><ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">{pack.features.map((f, i) => <li key={i} className="flex items-start gap-2 text-sm text-gray-300"><Check className="w-4 h-4 text-primary mt-0.5 shrink-0" /><span className="opacity-90">{f}</span></li>)}</ul></div>
+                                            </motion.div>
+                                          )}
+                                        </AnimatePresence>
                                       </div>
                                     </div>
+                                    {isSelected && <motion.div layoutId="active-pack-line" className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />}
                                   </motion.div>
-                                )}
-                              </AnimatePresence>
+                                );
+                              })}
                             </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-12">
+                        <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-primary mb-4 pl-2"><Sparkles className="w-4 h-4" /> Options Esthétiques</h3>
+                        <div className="grid sm:grid-cols-2 gap-4">
+                          {detailingOptions.map((opt) => (
+                            <div key={opt.id} onClick={() => setSelectedDetailingOptions(prev => prev.includes(opt.id) ? prev.filter(i => i !== opt.id) : [...prev, opt.id])} className={`p-4 rounded-xl border cursor-pointer transition-all flex justify-between items-center ${selectedDetailingOptions.includes(opt.id) ? 'bg-white/10 border-primary shadow-glow' : 'bg-white/5 border-white/10 hover:bg-white/[0.08]'}`}>
+                              <div className="flex items-center gap-3"><opt.icon className="w-5 h-5 text-gray-400" /><span className="text-sm font-bold text-white">{opt.name}</span></div><span className="text-xs font-mono text-gray-400">+{opt.basePrice}€</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="mt-12">
+                        <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-orange-500 mb-4 pl-2"><Wrench className="w-4 h-4" /> Entretien Mécanique</h3>
+                        <div className="grid sm:grid-cols-2 gap-4">
+                          {mechanicOptions.map((opt) => (
+                            <div key={opt.id} onClick={() => setSelectedMechanicOptions(prev => prev.includes(opt.id) ? prev.filter(i => i !== opt.id) : [...prev, opt.id])} className={`p-4 rounded-xl border cursor-pointer transition-all flex justify-between items-center ${selectedMechanicOptions.includes(opt.id) ? 'bg-orange-500/20 border-orange-500 text-orange-500' : 'bg-white/5 border-white/10 hover:bg-white/[0.08]'}`}>
+                              <div className="flex items-center gap-3"><opt.icon className="w-5 h-5" /><span className="text-sm font-bold">{opt.name}</span></div><span className="text-xs font-mono">+{opt.basePrice}€</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* STEP 3: DATE (AVEC DURÉE ESTIMÉE) */}
+                  {step === 3 && (
+                    <motion.div key="step3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="max-w-5xl mx-auto pb-10">
+                      <h2 className="text-3xl font-bold font-display text-white text-center mb-8">Planning</h2>
+                      <div className="flex flex-col md:flex-row gap-6 items-stretch">
+                        <div className="w-full md:w-3/5 bg-[#0f0f0f] border border-white/10 rounded-3xl p-6 flex flex-col">
+                          <div className="flex items-center justify-between mb-6">
+                            <span className="text-lg font-bold capitalize text-white pl-2">{new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' }).format(currentMonth)}</span>
+                            <div className="flex gap-2">
+                              <button onClick={() => changeMonth(-1)} className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-white"><ChevronLeft className="w-4 h-4"/></button>
+                              <button onClick={() => changeMonth(1)} className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-white"><ChevronRight className="w-4 h-4"/></button>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-7 mb-2 text-center text-xs font-bold text-gray-500 py-2">{['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((d, i) => <div key={i}>{d}</div>)}</div>
+                          <div className="grid grid-cols-7 gap-1 sm:gap-2 content-start">
+                            {(() => {
+                              const year = currentMonth.getFullYear();
+                              const month = currentMonth.getMonth();
+                              const firstDay = new Date(year, month, 1).getDay();
+                              const daysInMonth = new Date(year, month + 1, 0).getDate();
+                              const startDay = firstDay === 0 ? 6 : firstDay - 1;
+                              const days = [];
+                              for (let i = 0; i < startDay; i++) days.push(<div key={`empty-${i}`} className="w-full aspect-square" />);
+                              for (let d = 1; d <= daysInMonth; d++) {
+                                const dateObj = new Date(year, month, d);
+                                const isSelected = selectedDate?.toDateString() === dateObj.toDateString();
+                                const isAvailable = isDayAvailable(dateObj);
+                                days.push(
+                                  <button key={d} disabled={!isAvailable} onClick={() => { setSelectedDate(dateObj); setSelectedTime(null); }} className={`w-full aspect-square rounded-xl flex items-center justify-center text-sm font-medium transition-all ${isSelected ? 'bg-primary text-white shadow-glow' : !isAvailable ? 'text-gray-700 cursor-not-allowed opacity-50 bg-white/[0.01]' : 'text-gray-300 hover:bg-white/10 bg-white/[0.02]'}`}>
+                                    {d}
+                                  </button>
+                                );
+                              }
+                              return days;
+                            })()}
+                          </div>
+                        </div>
+                        <div className="w-full md:w-2/5 bg-[#0f0f0f] border border-white/10 rounded-3xl p-6 flex flex-col">
+                          <h3 className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-4">Date : {selectedDate ? new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }).format(selectedDate) : 'Aucune'}</h3>
+                          <div className="flex-1 overflow-y-auto min-h-[300px]">
+                            {selectedDate ? (
+                              <div className="grid grid-cols-3 gap-2">
+                                {timeSlots.map((time) => {
+                                  const [h, m] = time.split(':').map(Number);
+                                  const slotStart = new Date(selectedDate); slotStart.setHours(h, m, 0, 0);
+                                  const slotEnd = calculateEndDate(slotStart, totalDuration);
+                                  const isAvailable = isRangeAvailable(slotStart, slotEnd);
+                                  return (
+                                    <button key={time} disabled={!isAvailable} onClick={() => setSelectedTime(time)} className={`py-2 rounded-lg text-xs font-bold border transition-all ${selectedTime === time ? 'bg-primary border-primary text-black' : isAvailable ? 'bg-white/5 border-white/10 text-white hover:border-primary/50' : 'opacity-20 cursor-not-allowed border-red-900/50 text-red-900'}`}>
+                                      {time}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            ) : <p className="text-center text-gray-600 mt-10">Veuillez choisir une date.</p>}
                           </div>
                           
-                          {/* LIGNE ACTIVE (Barre Gauche) */}
-                          {isSelected && (
-                            <motion.div 
-                              layoutId="active-pack-line"
-                              className="absolute left-0 top-0 bottom-0 w-1 bg-primary" 
-                              transition={{ 
-                                type: "spring", 
-                                stiffness: 300, 
-                                damping: 30 
-                              }}
-                            />
-                          )}
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* --- BLOC 1 : OPTIONS DETAILING (Esthétique) --- */}
-                <div className="mb-10">
-                  <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-primary mb-4 pl-2">
-                    <Sparkles className="w-4 h-4" />
-                    Options Esthétiques
-                  </h3>
-
-                  <div className="bg-[#0f0f0f] border border-white/10 rounded-2xl overflow-hidden divide-y divide-white/5">
-                    {detailingOptions.map((opt) => {
-                      const isSelected = selectedDetailingOptions.includes(opt.id);
-                      const price = Math.round(opt.basePrice * (getVehicle()?.priceModifier || 1));
-
-                      return (
-                        <div
-                          key={opt.id}
-                          onClick={() => toggleDetailingOption(opt.id)}
-                          className="group p-5 flex items-center justify-between cursor-pointer hover:bg-white/[0.02] transition-all"
-                        >
-                          {/* Infos Option */}
-                          <div className="flex items-center gap-4">
-                            <div className={`p-2.5 rounded-xl transition-colors ${
-                              isSelected ? 'bg-primary/20 text-primary' : 'bg-white/5 text-gray-500'
-                            }`}>
-                              <opt.icon className="w-5 h-5" />
-                            </div>
-                            <div>
-                              <div className={`font-medium transition-colors ${isSelected ? 'text-white' : 'text-gray-400 group-hover:text-gray-200'}`}>
-                                {opt.name}
-                              </div>
-                              {opt.desc && <div className="text-xs text-gray-600 mt-0.5">{opt.desc}</div>}
-                            </div>
-                          </div>
-
-                          {/* Prix + Switch */}
-                          <div className="flex items-center gap-5">
-                            <span className="font-bold text-sm text-gray-300">+{price}€</span>
-                            
-                            {/* Switch Bleu */}
-                            <div className={`w-12 h-7 rounded-full transition-colors relative ${
-                              isSelected ? 'bg-primary' : 'bg-white/10'
-                            }`}>
-                              <motion.div 
-                                initial={false}
-                                animate={{ x: isSelected ? 22 : 2 }}
-                                className="absolute top-1 left-0 w-5 h-5 rounded-full bg-white shadow-sm"
-                                transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* --- BLOC 2 : OPTIONS MECANIQUE (Technique) --- */}
-                <div>
-                  <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-orange-500 mb-4 pl-2">
-                    <Wrench className="w-4 h-4" />
-                    Entretien Mécanique
-                  </h3>
-
-                  <div className="bg-[#0f0f0f] border border-white/10 rounded-2xl overflow-hidden divide-y divide-white/5">
-                    {mechanicOptions.map((opt) => {
-                      const isSelected = selectedMechanicOptions.includes(opt.id);
-                      
-                      return (
-                        <div
-                          key={opt.id}
-                          onClick={() => toggleMechanicOption(opt.id)}
-                          className="group p-5 flex items-center justify-between cursor-pointer hover:bg-white/[0.02] transition-all"
-                        >
-                          {/* Infos Option */}
-                          <div className="flex items-center gap-4">
-                            <div className={`p-2.5 rounded-xl transition-colors ${
-                              isSelected ? 'bg-orange-500/20 text-orange-500' : 'bg-white/5 text-gray-500'
-                            }`}>
-                              <opt.icon className="w-5 h-5" />
-                            </div>
-                            <div>
-                              <div className={`font-medium transition-colors ${isSelected ? 'text-white' : 'text-gray-400 group-hover:text-gray-200'}`}>
-                                {opt.name}
-                              </div>
-                              <div className="text-xs text-gray-600 mt-0.5">Entretien courant</div>
-                            </div>
-                          </div>
-
-                          {/* Prix + Switch */}
-                          <div className="flex items-center gap-5">
-                            <span className="font-bold text-sm text-gray-300">+{opt.basePrice}€</span>
-                            
-                            {/* Switch Orange */}
-                            <div className={`w-12 h-7 rounded-full transition-colors relative ${
-                              isSelected ? 'bg-orange-500' : 'bg-white/10'
-                            }`}>
-                              <motion.div 
-                                initial={false}
-                                animate={{ x: isSelected ? 22 : 2 }}
-                                className="absolute top-1 left-0 w-5 h-5 rounded-full bg-white shadow-sm"
-                                transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-            {/* Step 3: Date Selection  */}
-            {step === 3 && (
-              <motion.div
-                key="step3"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="max-w-5xl mx-auto pb-10"
-              >
-                <style>{`
-                  .no-scrollbar::-webkit-scrollbar { display: none; }
-                  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-                `}</style>
-
-                <div className="text-center mb-8">
-                  <h2 className="text-3xl font-bold font-display text-white">
-                    Planning
-                  </h2>
-                  <p className="text-muted-foreground mt-2">
-                    Sélectionnez votre date d'intervention
-                  </p>
-                </div>
-
-                <div className="flex flex-col md:flex-row gap-6 items-stretch">
-                  
-                  {/* --- BLOC CALENDRIER (Gauche) --- */}
-                  <div className="w-full md:w-3/5 bg-[#0f0f0f] border border-white/10 rounded-3xl p-6 flex flex-col">
-                    <div className="flex items-center justify-between mb-6">
-                      <span className="text-lg font-bold capitalize text-white pl-2">
-                        {new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' }).format(currentMonth)}
-                      </span>
-                      <div className="flex gap-2">
-                        <button 
-                          onClick={() => {
-                            const newDate = new Date(currentMonth);
-                            newDate.setMonth(newDate.getMonth() - 1);
-                            if (newDate >= new Date(new Date().setDate(1))) setCurrentMonth(newDate); 
-                          }}
-                          className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-white transition-colors"
-                        >
-                          <ChevronLeft className="w-4 h-4"/>
-                        </button>
-                        <button 
-                          onClick={() => {
-                            const newDate = new Date(currentMonth);
-                            newDate.setMonth(newDate.getMonth() + 1);
-                            setCurrentMonth(newDate);
-                          }}
-                          className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-white transition-colors"
-                        >
-                          <ChevronRight className="w-4 h-4"/>
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-7 mb-2">
-                      {['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((d, i) => (
-                        <div key={i} className="text-center text-xs font-bold text-gray-500 py-2">{d}</div>
-                      ))}
-                    </div>
-
-                    <div className="grid grid-cols-7 gap-1 sm:gap-2 content-start">
-                      {(() => {
-                        const year = currentMonth.getFullYear();
-                        const month = currentMonth.getMonth();
-                        const firstDayOfMonth = new Date(year, month, 1).getDay();
-                        const daysInMonth = new Date(year, month + 1, 0).getDate();
-                        const startDay = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
-                        const days = [];
-                        
-                        for (let i = 0; i < startDay; i++) days.push(<div key={`empty-${i}`} className="w-full aspect-square" />);
-
-                        for (let d = 1; d <= daysInMonth; d++) {
-                          const dateObj = new Date(year, month, d);
-                          const isSelected = selectedDate?.toDateString() === dateObj.toDateString();
-                          const isToday = new Date().toDateString() === dateObj.toDateString();
-                          const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
-                          const todayReset = new Date(); todayReset.setHours(0,0,0,0);
-                          const isPast = dateObj < todayReset;
-                          const isAvailable = !isWeekend && !isPast;
-
-                          days.push(
-                            <button
-                              key={d}
-                              disabled={!isAvailable}
-                              onClick={() => { setSelectedDate(dateObj); setSelectedTime(null); }}
-                              className={`w-full aspect-square relative rounded-xl flex items-center justify-center text-sm font-medium transition-all duration-200 ${
-                                isSelected
-                                  ? 'bg-primary text-white shadow-[0_0_15px_rgba(var(--primary),0.4)] z-10'
-                                  : !isAvailable
-                                  ? 'text-gray-700 cursor-not-allowed opacity-50'
-                                  : 'text-gray-300 hover:bg-white/10 hover:text-white bg-white/[0.02]'
-                              } ${isToday && !isSelected ? 'border border-primary/40 text-primary' : ''}`}
-                            >
-                              {d}
-                              {isAvailable && !isSelected && <div className="absolute bottom-1.5 w-1 h-1 rounded-full bg-white/30" />}
-                            </button>
-                          );
-                        }
-                        return days;
-                      })()}
-                    </div>
-                  </div>
-
-                  {/* --- BLOC HORAIRES (Droite) --- */}
-                  <div className="w-full md:w-2/5 bg-[#0f0f0f] border border-white/10 rounded-3xl p-6 flex flex-col">
-                    <div className="mb-4 pb-4 border-b border-white/10 flex-shrink-0">
-                       <h3 className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">Date sélectionnée</h3>
-                       <p className="text-white text-lg font-bold capitalize">
-                         {selectedDate 
-                           ? new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }).format(selectedDate)
-                           : 'Aucune date'}
-                       </p>
-                    </div>
-
-                    <div className="flex-1 overflow-y-auto no-scrollbar relative min-h-[300px]">
-                      <AnimatePresence mode="wait">
-                        {selectedDate ? (
-                          <motion.div
-                            key={selectedDate.toString()}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            className="space-y-3"
-                          >
-                            <h3 className="text-xs font-bold uppercase tracking-widest text-primary mb-3 mt-2">
-                              Créneaux disponibles
-                            </h3>
-                            
-                            {['09:00', '10:30', '14:00', '16:30'].map((time) => (
-                              <button
-                                key={time}
-                                onClick={() => setSelectedTime(time)}
-                                className={`w-full py-4 px-5 rounded-xl text-sm font-bold transition-all flex justify-between items-center ${
-                                  selectedTime === time
-                                    ? 'bg-primary text-white shadow-[0_0_20px_rgba(var(--primary),0.4)] scale-[1.02] border-primary' 
-                                    : 'bg-white/5 text-gray-300 hover:bg-white/10 hover:pl-6 border border-white/5'
-                                }`}
-                              >
-                                {time}
-                                {selectedTime === time && <Check className="w-4 h-4 text-white"/>}
-                              </button>
-                            ))}
-                            
-                            {/* 1. CALCUL DE LA DURÉE ESTIMÉE */}
-                            <div className="mt-6 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
-                              <p className="text-xs text-blue-200 flex gap-2 leading-relaxed">
-                                <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                                <span>
-                                  Durée estimée : <strong className="text-white">
-                                    {(() => {
-                                      let hours = 0;
-                                      // Base Pack
-                                      if (selectedPack === 'essentiel') hours += 2.5;
-                                      else if (selectedPack === 'renovation') hours += 7;
-                                      else if (selectedPack === 'ceramique') hours += 18;
-                                      
-                                      // + Options (45min par option)
-                                      hours += (selectedDetailingOptions.length + selectedMechanicOptions.length) * 0.75;
-                                      
-                                      // Ajustement taille véhicule
-                                      const vehicle = getVehicle();
-                                      if (vehicle) hours *= vehicle.priceModifier; // +15%, +30% etc.
-                                      
-                                      // Formatage
-                                      if (hours > 10) return Math.round(hours / 8) + ' jours';
-                                      const h = Math.floor(hours);
-                                      const m = Math.round((hours - h) * 60);
-                                      return `${h}h${m > 0 ? m : ''}`;
-                                    })()}
-                                  </strong>
-                                  . <br/>Merci d'arriver 5min avant.
-                                </span>
-                              </p>
-                            </div>
-                          </motion.div>
-                        ) : (
-                          <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-600 text-center">
-                             <p>Veuillez choisir une date.</p>
-                          </div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-            {/* Step 4: Coordonnées & Confirmation (Equal Height) */}
-            {step === 4 && (
-              <motion.div
-                key="step4"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="max-w-6xl mx-auto pb-10"
-              >
-                <div className="text-center mb-10">
-                  <h2 className="text-3xl font-bold font-display text-white">
-                    Finalisation
-                  </h2>
-                  <p className="text-muted-foreground mt-2">
-                    Dernière étape avant de valider votre rendez-vous
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
-                  
-                  {/* --- COLONNE GAUCHE : FORMULAIRE --- */}
-                  <div className="flex flex-col"> 
-                    
-                    <div className="bg-[#0f0f0f] border border-white/10 rounded-3xl p-6 md:p-8 h-full">
-                      <div className="flex items-center gap-3 mb-6">
-                        <div className="p-2 bg-primary/20 rounded-lg text-primary">
-                          <User className="w-5 h-5" />
-                        </div>
-                        <h3 className="text-xl font-bold text-white">Vos Coordonnées</h3>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-400 ml-1">Prénom *</label>
-                          <div className="relative">
-                            <input
-                              type="text"
-                              name="firstName"
-                              value={formData.firstName}
-                              onChange={handleInputChange}
-                              placeholder="Jean"
-                              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 pl-10 text-white placeholder:text-gray-600 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary transition-all"
-                            />
-                            <User className="w-4 h-4 text-gray-500 absolute left-3 top-3.5" />
-                          </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-400 ml-1">Nom *</label>
-                          <div className="relative">
-                            <input
-                              type="text"
-                              name="lastName"
-                              value={formData.lastName}
-                              onChange={handleInputChange}
-                              placeholder="Dupont"
-                              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 pl-10 text-white placeholder:text-gray-600 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary transition-all"
-                            />
-                            <User className="w-4 h-4 text-gray-500 absolute left-3 top-3.5" />
-                          </div>
-                        </div>
-
-                        <div className="md:col-span-2 space-y-2">
-                          <label className="text-sm font-medium text-gray-400 ml-1">Email *</label>
-                          <div className="relative">
-                            <input
-                              type="email"
-                              name="email"
-                              value={formData.email}
-                              onChange={handleInputChange}
-                              placeholder="jean.dupont@email.com"
-                              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 pl-10 text-white placeholder:text-gray-600 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary transition-all"
-                            />
-                            <Mail className="w-4 h-4 text-gray-500 absolute left-3 top-3.5" />
-                          </div>
-                        </div>
-
-                        <div className="md:col-span-2 space-y-2">
-                          <label className="text-sm font-medium text-gray-400 ml-1">Téléphone *</label>
-                          <div className="relative">
-                            <input
-                              type="tel"
-                              name="phone"
-                              value={formData.phone}
-                              onChange={handleInputChange}
-                              placeholder="06 12 34 56 78"
-                              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 pl-10 text-white placeholder:text-gray-600 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary transition-all"
-                            />
-                            <Phone className="w-4 h-4 text-gray-500 absolute left-3 top-3.5" />
-                          </div>
-                        </div>
-
-                        <div className="md:col-span-2 space-y-2 mt-2">
-                          <label className="text-sm font-medium text-gray-400 ml-1">Demande particulière (Optionnel)</label>
-                          <div className="relative">
-                            <textarea
-                              name="notes"
-                              value={formData.notes}
-                              onChange={handleInputChange}
-                              placeholder="Code d'accès, précisions sur le véhicule, siège bébé..."
-                              rows={3}
-                              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 pl-10 text-white placeholder:text-gray-600 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary transition-all resize-none"
-                            />
-                            <MessageSquare className="w-4 h-4 text-gray-500 absolute left-3 top-3.5" />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* --- COLONNE DROITE : RÉCAPITULATIF --- */}
-                  <div className="flex flex-col">
-                    <div className="bg-[#0f0f0f] border border-white/10 rounded-3xl p-8 h-full flex flex-col justify-between">
-                      
-                      {/* Partie Haute du Ticket */}
-                      <div>
-                        <h3 className="text-xl font-bold font-display text-white mb-6 flex items-center gap-3">
-                          <span className="w-1.5 h-6 bg-primary rounded-full"/>
-                          Récapitulatif
-                        </h3>
-
-                        <div className="space-y-6">
-                          {/* 1. Véhicule */}
-                          <div className="flex items-start gap-4 p-4 rounded-2xl bg-white/5 border border-white/5">
-                             <div className="p-2 bg-black rounded-lg border border-white/10 text-gray-400">
-                               {(() => {
-                                 const v = getVehicle();
-                                 const Icon = v?.icon || Car;
-                                 return <Icon className="w-5 h-5" />;
-                               })()}
-                             </div>
-                             <div>
-                               <p className="text-xs text-gray-500 uppercase tracking-wider font-bold">Véhicule</p>
-                               <p className="text-white font-bold">{getVehicle()?.name || 'Non sélectionné'}</p>
-                             </div>
-                          </div>
-
-                          {/* 2. Date & Heure */}
-                          <div className="flex items-start gap-4 p-4 rounded-2xl bg-white/5 border border-white/5">
-                             <div className="p-2 bg-black rounded-lg border border-white/10 text-gray-400">
-                               <CalendarIcon className="w-5 h-5" />
-                             </div>
-                             <div>
-                               <p className="text-xs text-gray-500 uppercase tracking-wider font-bold">Date & Heure</p>
-                               <p className="text-white font-bold capitalize">
-                                 {selectedDate 
-                                   ? new Intl.DateTimeFormat('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }).format(selectedDate)
-                                   : '--'}
-                               </p>
-                               <p className="text-primary text-sm font-medium">
-                                 à {selectedTime || '--:--'}
-                               </p>
-                             </div>
-                          </div>
-
-                          <div className="border-t border-white/10 border-dashed my-2" />
-
-                          {/* 3. Liste des Services */}
-                          <div className="space-y-3">
-                            <div className="flex justify-between items-start">
-                              <span className="text-gray-300 font-medium">
-                                {detailingPacks.find(p => p.id === selectedPack)?.name}
-                              </span>
-                              <span className="text-white font-bold">
-                                {Math.round((detailingPacks.find(p => p.id === selectedPack)?.basePrice || 0) * (getVehicle()?.priceModifier || 1))}€
-                              </span>
-                            </div>
-
-                            {selectedDetailingOptions.map(id => {
-                              const opt = detailingOptions.find(o => o.id === id);
-                              if (!opt) return null;
-                              return (
-                                <div key={id} className="flex justify-between items-start text-sm text-gray-500">
-                                  <span>+ {opt.name}</span>
-                                  <span>{Math.round(opt.basePrice * (getVehicle()?.priceModifier || 1))}€</span>
+                          {/* --- AJOUT DU PILL DURÉE ESTIMÉE --- */}
+                          <div className="mt-4 pt-4 border-t border-white/10">
+                            <div className="flex items-center justify-between bg-white/[0.03] p-3 rounded-xl border border-white/5">
+                                <div className="flex items-center gap-2 text-gray-400">
+                                  <Clock className="w-4 h-4" />
+                                  <span className="text-xs font-medium">Durée estimée</span>
                                 </div>
-                              );
-                            })}
-
-                            {selectedMechanicOptions.map(id => {
-                               const opt = mechanicOptions.find(o => o.id === id);
-                               if (!opt) return null;
-                               return (
-                                 <div key={id} className="flex justify-between items-start text-sm text-gray-500">
-                                   <span>+ {opt.name}</span>
-                                   <span>{opt.basePrice}€</span>
-                                 </div>
-                               );
-                            })}
+                                <div className="text-right">
+                                  <span className="text-sm font-bold text-white block">{formatDuration(totalDuration)}</span>
+                                  <span className="text-[9px] text-gray-600 uppercase tracking-wide block">Indicatif</span>
+                                </div>
+                            </div>
                           </div>
 
-                          <div className="border-t border-white/10 my-2" />
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
 
-                          {/* 4. TOTAL */}
-                          <div className="flex justify-between items-end mb-8">
-                            <span className="text-gray-400 font-medium mb-1">Total estimé</span>
-                            <span className="text-4xl font-bold text-primary tracking-tight">
-                              {calculateTotal()}€
-                            </span>
+                  {/* STEP 4: RECAP AVEC DURÉE */}
+                  {step === 4 && (
+                    <motion.div key="step4" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="max-w-6xl mx-auto pb-10">
+                      <h2 className="text-3xl font-bold font-display text-white text-center mb-10">Finalisation</h2>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
+                        <div className="flex flex-col">
+                          <div className="bg-[#0f0f0f] border border-white/10 rounded-3xl p-6 md:p-8 h-full">
+                            <div className="flex items-center gap-3 mb-6"><div className="p-2 bg-primary/20 rounded-lg text-primary"><User className="w-5 h-5" /></div><h3 className="text-xl font-bold text-white">Vos Coordonnées</h3></div>
+                            
+                            <div className="space-y-4">
+                              <div className="grid grid-cols-2 gap-4">
+                                <input 
+                                  type="text" 
+                                  name="firstName" 
+                                  value={formData.firstName} 
+                                  onChange={handleInputChange} 
+                                  placeholder="Prénom" 
+                                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-primary outline-none" 
+                                />
+                                <input 
+                                  type="text" 
+                                  name="lastName" 
+                                  value={formData.lastName} 
+                                  onChange={handleInputChange} 
+                                  placeholder="Nom" 
+                                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-primary outline-none" 
+                                />
+                              </div>
+                              
+                              {/* EMAIL AVEC VALIDATION VISUELLE */}
+                              <div className="relative">
+                                <input 
+                                  type="email" 
+                                  name="email" 
+                                  value={formData.email} 
+                                  onChange={handleInputChange} 
+                                  placeholder="Email (ex: jean@mail.com)" 
+                                  className={`w-full bg-white/5 border rounded-xl px-4 py-3 text-white focus:outline-none transition-all
+                                    ${formData.email && !isEmailValid(formData.email) 
+                                      ? 'border-red-500 focus:border-red-500' // Erreur
+                                      : formData.email && isEmailValid(formData.email)
+                                        ? 'border-green-500/50 focus:border-green-500' // Valide
+                                        : 'border-white/10 focus:border-primary' // Neutre
+                                    }`} 
+                                />
+                                {formData.email && !isEmailValid(formData.email) && (
+                                  <span className="text-[10px] text-red-400 absolute right-3 top-3.5">Format invalide</span>
+                                )}
+                              </div>
+
+                              {/* TÉLÉPHONE AVEC VALIDATION VISUELLE */}
+                              <div className="relative">
+                                <input 
+                                  type="tel" 
+                                  name="phone" 
+                                  value={formData.phone} 
+                                  onChange={handleInputChange} 
+                                  placeholder="Téléphone (ex: 06 12 34 56 78)" 
+                                  className={`w-full bg-white/5 border rounded-xl px-4 py-3 text-white focus:outline-none transition-all
+                                    ${formData.phone && !isPhoneValid(formData.phone) 
+                                      ? 'border-red-500 focus:border-red-500' 
+                                      : formData.phone && isPhoneValid(formData.phone)
+                                        ? 'border-green-500/50 focus:border-green-500'
+                                        : 'border-white/10 focus:border-primary'
+                                    }`} 
+                                />
+                                {formData.phone && !isPhoneValid(formData.phone) && (
+                                  <span className="text-[10px] text-red-400 absolute right-3 top-3.5">Format invalide</span>
+                                )}
+                              </div>
+
+                              <textarea 
+                                name="notes" 
+                                value={formData.notes} 
+                                onChange={handleInputChange} 
+                                placeholder="Demande particulière..." 
+                                rows={3} 
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-primary outline-none resize-none" 
+                              />
                           </div>
                         </div>
                       </div>
+                        <div className="flex flex-col">
+                          <div className="bg-[#0f0f0f] border border-white/10 rounded-3xl p-8 h-full flex flex-col justify-between">
+                            <div>
+                              <h3 className="text-xl font-bold font-display text-white mb-6 flex items-center gap-3"><span className="w-1.5 h-6 bg-primary rounded-full"/> Récapitulatif</h3>
+                              <div className="space-y-4">
+                                <div className="flex items-start gap-4 p-4 rounded-2xl bg-white/5 border border-white/5"><div className="p-2 bg-black rounded-lg border border-white/10 text-gray-400"><CarFront className="w-5 h-5" /></div><div><p className="text-xs text-gray-500 uppercase tracking-wider font-bold">Véhicule</p><p className="text-white font-bold">{vehicleTypes.find(v => v.id === selectedVehicle)?.name}</p></div></div>
+                                
+                                <div className="flex items-start gap-4 p-4 rounded-2xl bg-white/5 border border-white/5">
+                                  <div className="p-2 bg-black rounded-lg border border-white/10 text-gray-400"><CalendarIcon className="w-5 h-5" /></div>
+                                  <div className="flex-1">
+                                    <div className="flex justify-between items-start">
+                                      <div>
+                                          <p className="text-xs text-gray-500 uppercase tracking-wider font-bold">Date & Heure</p>
+                                          <p className="text-white font-bold capitalize">{selectedDate ? new Intl.DateTimeFormat('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }).format(selectedDate) : '--'}</p>
+                                          <p className="text-primary text-sm font-medium">à {selectedTime || '--:--'}</p>
+                                      </div>
+                                      <div className="text-right">
+                                          <p className="text-xs text-gray-500 uppercase tracking-wider font-bold">Durée Est.</p>
+                                          <p className="text-white font-bold">{formatDuration(totalDuration)}</p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
 
-                      {/* Partie Basse (Bouton) */}
-                      <div>
-                        <button 
-                          disabled={!isFormValid}
-                          className={`w-full py-4 rounded-xl font-bold text-lg transition-all flex items-center justify-center gap-2 ${
-                            isFormValid 
-                              ? 'bg-primary text-white hover:bg-primary/90 shadow-[0_0_20px_rgba(var(--primary),0.3)] transform hover:-translate-y-1' 
-                              : 'bg-white/10 text-gray-500 cursor-not-allowed border border-white/5'
-                          }`}
-                        >
-                          {isFormValid ? (
-                            <>Confirmer le RDV <ChevronRight className="w-5 h-5" /></>
-                          ) : (
-                            'Remplissez vos infos'
-                          )}
-                        </button>
-
-                        <p className="text-center text-xs text-gray-600 mt-4">
-                          Paiement sur place • Annulation gratuite jusqu'à 24h
-                        </p>
+                                <div className="border-t border-white/10 border-dashed my-2" />
+                                <div className="space-y-2">
+                                  <div className="flex justify-between items-start text-white font-bold"><span>{detailingPacks.find(p => p.id === selectedPack)?.name}</span><span>{isSurDevis ? 'Sur Devis' : getPackPrice(selectedPack!, selectedVehicle) + '€'}</span></div>
+                                  {selectedDetailingOptions.map(id => <div key={id} className="flex justify-between text-sm text-gray-400"><span>+ {detailingOptions.find(o => o.id === id)?.name}</span><span>{detailingOptions.find(o => o.id === id)?.basePrice}€</span></div>)}
+                                  {selectedMechanicOptions.map(id => <div key={id} className="flex justify-between text-sm text-gray-400"><span>+ {mechanicOptions.find(o => o.id === id)?.name}</span><span>{mechanicOptions.find(o => o.id === id)?.basePrice}€</span></div>)}
+                                </div>
+                                <div className="flex justify-between items-end mt-6 pt-4 border-t border-white/10"><span className="text-gray-400 font-medium">Total estimé</span><span className="text-4xl font-bold text-primary tracking-tight">{isSurDevis ? 'Sur Devis' : calculateTotal() + '€'}</span></div>
+                              </div>
+                            </div>
+                            <button type="button" onClick={handleSubmit} disabled={!isFormValid} className={`w-full py-4 rounded-xl font-black text-lg transition-all flex items-center justify-center gap-3 mt-6 ${isFormValid ? 'bg-primary text-white shadow-glow hover:scale-[1.02]' : 'bg-white/10 text-gray-500 cursor-not-allowed'}`}>{isFormValid ? <>CONFIRMER <Check className="w-6 h-6" /></> : 'REMPLIR LES CHAMPS'}</button>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </section>
+                    </motion.div>
+                  )}
+                </>
+              )}
+            </AnimatePresence>
+          </div>
+        </section>
 
-      {/* Navigation */}
-      <div className="sticky bottom-0 bg-background/80 backdrop-blur-xl border-t border-border py-4">
-        <div className="container px-4 md:px-6">
-          <div className="flex items-center justify-between max-w-2xl mx-auto">
-            <button
-              onClick={() => setStep((s) => Math.max(1, s - 1))}
-              disabled={step === 1}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-colors ${
-                step === 1
-                  ? 'text-muted-foreground cursor-not-allowed'
-                  : 'text-foreground hover:bg-secondary'
-              }`}
-            >
-              <ChevronLeft className="w-5 h-5" />
-              Retour
-            </button>
-
-            {/* Price Preview */}
-            {(selectedPack || selectedDetailingOptions.length > 0 || selectedMechanicOptions.length > 0) && step < 4 && (
+        {/* BOTTOM NAV */}
+        <div className="sticky bottom-0 z-50 bg-background/80 backdrop-blur-xl border-t border-border py-4 w-full flex-shrink-0">
+          <div className="container px-4 md:px-6 flex justify-between max-w-2xl mx-auto">
+            <button onClick={() => setStep(s => Math.max(1, s - 1))} disabled={step === 1} className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-colors ${step === 1 ? 'opacity-0' : 'text-foreground hover:bg-secondary'}`}><ChevronLeft className="w-5 h-5" /> Retour</button>
+            {step < 4 && (
               <div className="text-center">
                 <span className="text-sm text-muted-foreground">Total</span>
-                <span className="block text-xl font-bold text-primary">{calculateTotal()}€</span>
+                <span className="block text-xl font-bold text-primary">{isSurDevis ? 'Devis' : calculateTotal() + '€'}</span>
               </div>
             )}
-
-            <button
-              onClick={() => setStep((s) => Math.min(totalSteps, s + 1))}
-              disabled={!canProceed()}
-              className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all ${
-                canProceed()
-                  ? 'btn-premium'
-                  : 'bg-secondary text-muted-foreground cursor-not-allowed'
-              }`}
-            >
-              {step === totalSteps ? 'Terminer' : 'Continuer'}
-              <ChevronRight className="w-5 h-5" />
-            </button>
+            {step < 4 ? (
+              <button onClick={() => setStep(s => Math.min(totalSteps, s + 1))} disabled={!canProceed()} className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all ${canProceed() ? 'bg-primary text-white shadow-glow' : 'bg-secondary text-muted-foreground'}`}>Continuer <ChevronRight className="w-5 h-5" /></button>
+            ) : <div className="w-[120px]" />}
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

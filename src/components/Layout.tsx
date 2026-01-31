@@ -1,15 +1,54 @@
 // components/Layout.tsx
+import { Helmet } from 'react-helmet-async';
 import { Outlet } from 'react-router-dom';
 import { Navbar } from './Navbar';
 import { Footer } from './Footer';
 
-// Pas besoin de props children ici
 export const Layout = () => {
+  
+  // Données structurées pour Google 
+  const schemaData = {
+    "@context": "https://schema.org",
+    "@type": "AutoDetaling", 
+    "name": "Saphir Detailing",
+    "image": "@/assets/logo.png", 
+    "description": "Centre de rénovation esthétique automobile, polissage et céramique à Oust (09).",
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "Oust",
+      "postalCode": "09140",
+      "addressCountry": "FR"
+    },
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": "42.876", 
+      "longitude": "1.212"
+    },
+    "url": "https://ton-site.com", // TODO Remplacer par l'URL réelle
+    "telephone": "+33668840627", 
+    "priceRange": "$$",
+    "openingHoursSpecification": [
+      {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+        "opens": "09:00",
+        "closes": "19:00"
+      }
+    ]
+  };
+
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col font-sans">
+      
+      <Helmet>
+        <script type="application/ld+json">
+          {JSON.stringify(schemaData)}
+        </script>
+      </Helmet>
+
       <Navbar /> 
       
-      <main className="flex-1">
+      <main className="flex-1 relative">
         <Outlet /> 
       </main>
       
