@@ -120,8 +120,9 @@ export const Footer = () => {
                 <li className="flex items-start gap-3">
                   <Clock className="w-5 h-5 text-primary shrink-0 mt-0.5" />
                   <span className="text-sm text-muted-foreground">
-                    Lun - Ven: 8h - 19h<br />
-                    Sam: 9h - 17h
+                    Lundi au Vendredi:<br />
+                    09h00 - 12h00 <br/>
+                    14h00 - 18h00
                   </span>
                 </li>
               </ul>

@@ -7,7 +7,10 @@ import {
 } from 'lucide-react';
 import { toast } from "sonner";
 
-const HOURS = Array.from({ length: 21 }, (_, i) => 9 + i * 0.5); // 9h à 19h
+const HOURS = [
+  9, 9.5, 10, 10.5, 11, 11.5,       // Matin (jusqu'à 12h00)
+  14, 14.5, 15, 15.5, 16, 16.5, 17, 17.5 // Après-midi (jusqu'à 18h00)
+];
 
 const AdminPlanning = () => {
   const [reservations, setReservations] = useState<any[]>([]);
@@ -72,10 +75,11 @@ const AdminPlanning = () => {
 
   const isVisualStart = (day: Date, hour: number, res: any) => {
     const resStart = new Date(res.start_at);
-    // Cas 1 : C'est l'heure exacte de début
     if (resStart.getDate() === day.getDate() && resStart.getHours() === Math.floor(hour) && resStart.getMinutes() === (hour % 1) * 60) return true;
-    // Cas 2 : La réservation a commencé un jour avant, donc pour ce jour, le début est à 9h00
-    if (hour === 9 && resStart < day) return true;
+    
+    if ((hour === 9 || hour === 14) && resStart < day) return true; // Simplifié pour le jour même, ajuster si besoin pour heure précise
+    if ((hour === 9 || hour === 14) && resStart.getTime() < new Date(day).setHours(hour, 0, 0, 0)) return true;
+
     return false;
   };
 
@@ -86,14 +90,13 @@ const AdminPlanning = () => {
     
     // Si la résa finit pile à la fin de ce slot
     if (resEnd.getTime() === slotTime.getTime()) return true;
-    // Si on est à 19h (fin de journée affichée)
-    if (hour === 18.5) return true;
+    
+    if (hour === 11.5 || hour === 17.5) return true;
+    
     return false;
   };
 
   // --- ACTIONS ---
-  
-  // Confirmer ou Annuler (Soft Delete)
   const updateStatus = async (id: string, newStatus: string) => {
     const { error } = await supabase.from('reservations').update({ status: newStatus }).eq('id', id);
     if (!error) {
@@ -109,7 +112,6 @@ const AdminPlanning = () => {
     }
   };
 
-  // Supprimer définitivement 
   const deleteReservation = async (id: string) => {
     if (!confirm("Voulez-vous supprimer DÉFINITIVEMENT cette demande ?")) return;
     
@@ -185,55 +187,59 @@ const AdminPlanning = () => {
           </div>
 
           <div ref={scrollContainerRef} className="flex-1 overflow-y-auto custom-scrollbar relative">
-            {HOURS.map(hour => (
-              <div key={hour} className="flex min-h-[3.5rem] border-b border-white/[0.03]"> 
-                <div className="w-16 border-r border-white/10 flex items-start justify-center pt-2 text-[10px] font-bold text-gray-600 bg-black/40 shrink-0">
-                  {hour % 1 === 0 ? `${hour}:00` : ''}
-                </div>
-                {weekDays.map((day, i) => {
-                  const res = getResaForSlot(day, hour);
-                  
-                  if (!res) {
-                    // CASE VIDE
-                    return <div key={i} className="flex-1 border-r border-white/[0.03] last:border-0 hover:bg-white/[0.01]" />;
-                  }
+            {HOURS.map((hour, index) => {
+              const isGap = index > 0 && hour - HOURS[index - 1] > 0.5;
 
-                  // CASE OCCUPÉE (FUSION VISUELLE)
-                  const isStart = isVisualStart(day, hour, res);
-                  const isEnd = isVisualEnd(day, hour, res);
-                  const isConfirmed = res.status === 'confirmed';
+              return (
+                <div key={hour} className={`flex min-h-[3.5rem] border-b border-white/[0.03] ${isGap ? 'mt-4 border-t border-white/10' : ''}`}> 
+                  <div className="w-16 border-r border-white/10 flex items-start justify-center pt-2 text-[10px] font-bold text-gray-600 bg-black/40 shrink-0">
+                    {hour % 1 === 0 ? `${hour}:00` : ''}
+                  </div>
+                  {weekDays.map((day, i) => {
+                    const res = getResaForSlot(day, hour);
+                    
+                    if (!res) {
+                      // CASE VIDE
+                      return <div key={i} className="flex-1 border-r border-white/[0.03] last:border-0 hover:bg-white/[0.01]" />;
+                    }
 
-                  return (
-                    <div 
-                      key={i} 
-                      onClick={() => setSelectedResa(res)}
-                      className={`flex-1 border-r border-white/10 last:border-0 cursor-pointer relative group
-                        ${isConfirmed 
-                          ? 'bg-[#121212] hover:bg-[#1a1a1a]' 
-                          : 'bg-primary/10 hover:bg-primary/20'} // Fond teinté pour attente
-                      `}
-                    >
-                      <div className={`absolute left-0 top-0 bottom-0 w-1 
-                        ${isConfirmed ? 'bg-emerald-500 shadow-[0_0_10px_#10b981]' : 'bg-primary shadow-[0_0_10px_#d4af37]'}
-                        ${isStart ? 'rounded-tl-full' : ''} ${isEnd ? 'rounded-bl-full' : ''}
-                      `} />
+                    // CASE OCCUPÉE (FUSION VISUELLE)
+                    const isStart = isVisualStart(day, hour, res);
+                    const isEnd = isVisualEnd(day, hour, res);
+                    const isConfirmed = res.status === 'confirmed';
 
-                      {isStart && (
-                        <div className="pl-3 pt-2 pr-1 relative z-10 animate-in fade-in slide-in-from-left-2 duration-300">
-                          <div className="flex items-center gap-2 mb-0.5">
-                             <p className={`text-[9px] font-black uppercase tracking-widest truncate ${isConfirmed ? 'text-emerald-500' : 'text-primary'}`}>
-                               {res.service_name}
-                             </p>
-                             {res.payment_status === 'paid' && <DollarSign className="w-3 h-3 text-emerald-500" />}
+                    return (
+                      <div 
+                        key={i} 
+                        onClick={() => setSelectedResa(res)}
+                        className={`flex-1 border-r border-white/10 last:border-0 cursor-pointer relative group min-w-0 overflow-hidden
+                          ${isConfirmed 
+                            ? 'bg-[#121212] hover:bg-[#1a1a1a]' 
+                            : 'bg-primary/10 hover:bg-primary/20'} 
+                        `}
+                      >
+                        <div className={`absolute left-0 top-0 bottom-0 w-1 
+                          ${isConfirmed ? 'bg-emerald-500 shadow-[0_0_10px_#10b981]' : 'bg-primary shadow-[0_0_10px_#d4af37]'}
+                          ${isStart ? 'rounded-tl-full' : ''} ${isEnd ? 'rounded-bl-full' : ''}
+                        `} />
+
+                        {isStart && (
+                          <div className="pl-3 pt-2 pr-1 relative z-10 animate-in fade-in slide-in-from-left-2 duration-300 w-full">
+                            <div className="flex items-center gap-2 mb-0.5">
+                               <p className={`text-[9px] font-black uppercase tracking-widest truncate ${isConfirmed ? 'text-emerald-500' : 'text-primary'}`}>
+                                 {res.service_name}
+                               </p>
+                               {res.payment_status === 'paid' && <DollarSign className="w-3 h-3 text-emerald-500 shrink-0" />}
+                            </div>
+                            <p className="text-xs font-black text-white uppercase truncate">{res.client_name}</p>
                           </div>
-                          <p className="text-xs font-black text-white uppercase truncate">{res.client_name}</p>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

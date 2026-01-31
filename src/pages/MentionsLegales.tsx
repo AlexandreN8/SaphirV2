@@ -25,14 +25,13 @@ const MentionsLegales = () => {
               <h2 className="text-2xl font-bold text-white mb-4">1. Éditeur du Site</h2>
               <p className="mb-2">Le site <strong>saphir-detailing.fr</strong> est édité par :</p>
               <ul className="list-disc pl-5 space-y-2 marker:text-primary">
-                <li><strong>Raison sociale / Nom :</strong> [TON NOM OU NOM DE SOCIÉTÉ]</li>
-                <li><strong>Statut Juridique :</strong> [EX: Auto-entrepreneur / SASU]</li>
-                <li><strong>Siège Social :</strong> [TON ADRESSE COMPLÈTE À OUST]</li>
-                <li><strong>SIRET :</strong> [TON NUMÉRO SIRET]</li>
-                <li><strong>RM / RCS :</strong> [NUMÉRO RCS SI APPLICABLE]</li>
-                <li><strong>Email :</strong> [TON EMAIL PRO]</li>
-                <li><strong>Téléphone :</strong> [TON NUMÉRO]</li>
-                <li><strong>Directeur de publication :</strong> [TON NOM]</li>
+                <li><strong>Raison sociale / Nom :</strong> Saphir Detailing</li>
+                <li><strong>Statut Juridique :</strong> Auto-entrepreneur </li>
+                <li><strong>Siège Social :</strong> 295 Route d'Aulus, Oust 09140</li>
+                <li><strong>SIRET :</strong> 79834517900047 </li>
+                <li><strong>Email :</strong> saphir.detailing@gmail.com</li>
+                <li><strong>Téléphone :</strong> 06 68 04 84 06 27</li>
+                <li><strong>Directeur de publication :</strong> Novais</li>
               </ul>
             </section>
 
@@ -51,7 +50,7 @@ const MentionsLegales = () => {
             <section className="bg-[#0f0f0f] border border-white/5 p-8 rounded-3xl">
               <h2 className="text-2xl font-bold text-white mb-4">4. Données Personnelles (RGPD)</h2>
               <p className="mb-4">Les informations recueillies via le formulaire de réservation (Nom, Email, Téléphone, Immatriculation) sont enregistrées dans un fichier informatisé par <strong>Saphir Detailing</strong> pour la gestion de la clientèle et des prestations.</p>
-              <p className="mb-4">Elles sont conservées pendant <strong>3 ans</strong> et sont destinées uniquement à la gestion interne. Conformément à la loi « informatique et libertés », vous pouvez exercer votre droit d'accès aux données vous concernant et les faire rectifier en contactant : [TON EMAIL].</p>
+              <p className="mb-4">Elles sont conservées pendant <strong>3 ans</strong> et sont destinées uniquement à la gestion interne. Conformément à la loi « informatique et libertés », vous pouvez exercer votre droit d'accès aux données vous concernant et les faire rectifier en contactant : saphir.detailing@gmail.com.</p>
             </section>
           </div>
 

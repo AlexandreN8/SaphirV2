@@ -12,7 +12,6 @@ import {
 
 // --- DONNÉES ---
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-// Accepte: 0612345678, 06 12 34 56 78, 06.12.34.56.78, +33 6 12...
 const phoneRegex = /^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$/;
 
 const vehicleTypes = [
@@ -95,11 +94,10 @@ const Reservation = () => {
     return Math.round(h * 2) / 2;
   }, [selectedPack, selectedDetailingOptions, selectedMechanicOptions, selectedVehicle]);
 
-  // Helper pour formater la durée (ex: 2.5 -> "2h30")
   const formatDuration = (hours: number) => {
     const h = Math.floor(hours);
     const m = Math.round((hours - h) * 60);
-    if (h > 10) return `${Math.ceil(h/8)} jours`; // Si très long
+    if (h > 10) return `${Math.ceil(h/8)} jours`; 
     return `${h}h${m > 0 ? m : ''}`;
   };
 
@@ -133,26 +131,52 @@ const Reservation = () => {
     fetchMonthData();
   }, [currentMonth]);
 
+  // --- MODIFICATION 1 : Créneaux horaires ---
   const timeSlots = useMemo(() => {
     const slots = [];
-    for (let h = 9; h <= 12; h += 0.5) slots.push(`${Math.floor(h).toString().padStart(2, '0')}:${h % 1 === 0 ? '00' : '30'}`);
-    for (let h = 13.5; h <= 18.5; h += 0.5) slots.push(`${Math.floor(h).toString().padStart(2, '0')}:${h % 1 === 0 ? '00' : '30'}`);
+    // Matin : 09h00 à 11h30 (pour finir à 12h00 max pour le dernier créneau de 30min)
+    for (let h = 9; h < 12; h += 0.5) slots.push(`${Math.floor(h).toString().padStart(2, '0')}:${h % 1 === 0 ? '00' : '30'}`);
+    // Après-midi : 14h00 à 17h30 (pour finir à 18h00 max)
+    for (let h = 14; h < 18; h += 0.5) slots.push(`${Math.floor(h).toString().padStart(2, '0')}:${h % 1 === 0 ? '00' : '30'}`);
     return slots;
   }, []);
 
+  // --- MODIFICATION 2 : Calcul fin de prestation (Week-end et Pause midi) ---
   const calculateEndDate = (startDate: Date, durationHours: number) => {
     let end = new Date(startDate);
     let remaining = durationHours;
+    
+    // On avance par tranche de 30 minutes
     while (remaining > 0) {
       end.setMinutes(end.getMinutes() + 30);
       const h = end.getHours() + end.getMinutes() / 60;
-      const isWeekend = end.getDay() === 0;
-      if (h > 19 || h < 9 || (h > 12.5 && h < 13.5) || isWeekend) {
-        if (h > 19) { end.setDate(end.getDate() + 1); end.setHours(9, 0, 0, 0); }
-        else if (h > 12.5 && h < 13.5) { end.setHours(13, 30, 0, 0); }
-        else if (isWeekend) { end.setDate(end.getDate() + 1); end.setHours(9, 0, 0, 0); }
+      const day = end.getDay(); // 0 = Dimanche, 6 = Samedi
+
+      // Si on tombe sur le week-end (Samedi ou Dimanche), on passe au Lundi 9h00
+      if (day === 6 || day === 0) {
+        end.setDate(end.getDate() + (day === 6 ? 2 : 1));
+        end.setHours(9, 0, 0, 0);
         continue;
       }
+
+      // Pause midi : Si on dépasse 12h00, on reprend à 14h00
+      if (h > 12 && h < 14) {
+        end.setHours(14, 0, 0, 0);
+        continue; // On continue la boucle sans déduire de temps car on a sauté la pause
+      }
+
+      // Soir : Si on dépasse 18h00, on reprend le lendemain 9h00
+      if (h > 18 || (h === 18 && end.getMinutes() > 0)) {
+        end.setDate(end.getDate() + 1);
+        end.setHours(9, 0, 0, 0);
+        // On vérifie si le lendemain est un week-end
+        const nextDay = end.getDay();
+        if (nextDay === 6 || nextDay === 0) {
+            end.setDate(end.getDate() + (nextDay === 6 ? 2 : 1));
+        }
+        continue;
+      }
+
       remaining -= 0.5;
     }
     return end;
@@ -167,21 +191,16 @@ const Reservation = () => {
     return true;
   };
 
+  // --- MODIFICATION 3 : Vérification jours disponibles ---
   const isDayAvailable = (date: Date) => {
     const today = new Date(); today.setHours(0,0,0,0);
-    if (date < today || date.getDay() === 0) return false;
+    // On bloque Dimanche (0) ET Samedi (6)
+    if (date < today || date.getDay() === 0 || date.getDay() === 6) return false;
 
-    // Optimisation rapide
-    const dayStart = new Date(date); dayStart.setHours(9,0,0,0);
-    const dayEnd = new Date(date); dayEnd.setHours(19,0,0,0);
-    for (const res of monthReservations) {
-      if (new Date(res.start_at) <= dayStart && new Date(res.end_at) >= dayEnd) return false;
-    }
-
-    // Simulation réelle
+    // Simulation avec les nouveaux créneaux
     const slotsToCheck = [];
-    for (let h = 9; h <= 12; h += 0.5) slotsToCheck.push(h);
-    for (let h = 13.5; h <= 18.5; h += 0.5) slotsToCheck.push(h);
+    for (let h = 9; h < 12; h += 0.5) slotsToCheck.push(h);
+    for (let h = 14; h < 18; h += 0.5) slotsToCheck.push(h);
 
     return slotsToCheck.some(h => {
       const simStart = new Date(date);
@@ -229,7 +248,7 @@ const Reservation = () => {
   formData.firstName.length >= 2 &&
     formData.lastName.length >= 2 &&
     isEmailValid(formData.email) &&
-    isPhoneValid(formData.phone);  
+    isPhoneValid(formData.phone);   
     
   const canProceed = () => {
     if (step === 1) return selectedVehicle !== null;
@@ -446,7 +465,6 @@ const Reservation = () => {
                             ) : <p className="text-center text-gray-600 mt-10">Veuillez choisir une date.</p>}
                           </div>
                           
-                          {/* --- AJOUT DU PILL DURÉE ESTIMÉE --- */}
                           <div className="mt-4 pt-4 border-t border-white/10">
                             <div className="flex items-center justify-between bg-white/[0.03] p-3 rounded-xl border border-white/5">
                                 <div className="flex items-center gap-2 text-gray-400">
@@ -494,7 +512,6 @@ const Reservation = () => {
                                 />
                               </div>
                               
-                              {/* EMAIL AVEC VALIDATION VISUELLE */}
                               <div className="relative">
                                 <input 
                                   type="email" 
@@ -508,14 +525,13 @@ const Reservation = () => {
                                       : formData.email && isEmailValid(formData.email)
                                         ? 'border-green-500/50 focus:border-green-500' // Valide
                                         : 'border-white/10 focus:border-primary' // Neutre
-                                    }`} 
+                                      }`} 
                                 />
                                 {formData.email && !isEmailValid(formData.email) && (
                                   <span className="text-[10px] text-red-400 absolute right-3 top-3.5">Format invalide</span>
                                 )}
                               </div>
 
-                              {/* TÉLÉPHONE AVEC VALIDATION VISUELLE */}
                               <div className="relative">
                                 <input 
                                   type="tel" 
@@ -529,7 +545,7 @@ const Reservation = () => {
                                       : formData.phone && isPhoneValid(formData.phone)
                                         ? 'border-green-500/50 focus:border-green-500'
                                         : 'border-white/10 focus:border-primary'
-                                    }`} 
+                                      }`} 
                                 />
                                 {formData.phone && !isPhoneValid(formData.phone) && (
                                   <span className="text-[10px] text-red-400 absolute right-3 top-3.5">Format invalide</span>
@@ -544,9 +560,9 @@ const Reservation = () => {
                                 rows={3} 
                                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-primary outline-none resize-none" 
                               />
+                            </div>
                           </div>
                         </div>
-                      </div>
                         <div className="flex flex-col">
                           <div className="bg-[#0f0f0f] border border-white/10 rounded-3xl p-8 h-full flex flex-col justify-between">
                             <div>

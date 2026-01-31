@@ -68,8 +68,8 @@ const Contact = () => {
     {
       icon: Clock,
       title: "Horaires",
-      content: "Lun-Ven: 9h-19h • Sam: 9h-17h",
-      action: null,
+      content: `Lundi au Vendredi:
+      9h-12h - 14h-18h`,
       link: null
     }
   ];
