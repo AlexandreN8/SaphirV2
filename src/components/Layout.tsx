@@ -24,7 +24,7 @@ export const Layout = () => {
       "latitude": "42.876", 
       "longitude": "1.212"
     },
-    "url": "https://ton-site.com", // TODO Remplacer par l'URL réelle
+    "url": "https://saphir-v2-nax9.vercel.app/", // TODO Remplacer par l'URL réelle
     "telephone": "+33668840627", 
     "priceRange": "$$",
     "openingHoursSpecification": [

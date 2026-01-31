@@ -9,9 +9,16 @@ interface SeoHeadProps {
 
 const SeoHead = ({ title, description, canonicalUrl, image }: SeoHeadProps) => {
   const siteName = "Saphir Detailing";
-  const fullTitle = `${title} | ${siteName}`;
-  const currentUrl = canonicalUrl || window.location.href;
-  const socialImage = image || "https://ton-site.com/og-default.jpg";  // TODO: Remplacer par l'URL réelle de l'image par défaut
+    const siteUrl = import.meta.env.PROD 
+        ? 'https://saphir-v2-nax9.vercel.app/' 
+        : 'http://localhost:5173';       
+
+    const fullTitle = `${title} | ${siteName}`;
+    const currentUrl = canonicalUrl || window.location.href;
+    
+    // 2. Construction de l'image
+    const rawImage = image || '/og-default.jpg'; 
+    const socialImage = rawImage.startsWith('http') ? rawImage : `${siteUrl}${rawImage}`;
 
   return (
     <Helmet>
@@ -19,7 +26,7 @@ const SeoHead = ({ title, description, canonicalUrl, image }: SeoHeadProps) => {
       <meta name="description" content={description} />
       <link rel="canonical" href={currentUrl} />
 
-      {/* Open Graph */}
+      {/* Open Graph / Facebook */}
       <meta property="og:type" content="website" />
       <meta property="og:title" content={fullTitle} />
       <meta property="og:description" content={description} />
