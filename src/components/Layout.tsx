@@ -11,7 +11,7 @@ export const Layout = () => {
     "@context": "https://schema.org",
     "@type": "AutoDetaling", 
     "name": "Saphir Detailing",
-    "image": "@/assets/logo.webP", 
+    "image": "@/assets/logo.webp", 
     "description": "Centre de rénovation esthétique automobile, polissage et céramique à Oust (09).",
     "address": {
       "@type": "PostalAddress",

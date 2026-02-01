@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { MapPin, Phone, Mail, Clock, Instagram, Facebook } from 'lucide-react';
-import logo from '@/assets/logo.webP';
+import logo from '@/assets/logo.webp';
 
 // --- ICÔNES PERSONNALISÉES (TikTok & Snapchat) ---
 const TiktokIcon = ({ className }: { className?: string }) => (
