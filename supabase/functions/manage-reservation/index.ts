@@ -6,7 +6,7 @@ const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const SENDER_EMAIL = "Saphir Detailing <contact@saphirdetailing.fr>";
 const ADMIN_EMAIL = "contact@saphirdetailing.fr"; 
 const SITE_URL = "https://saphirdetailing.fr";
-const DASHBOARD_URL = "https://saphirdetailing.fr/admin"; 
+const DASHBOARD_URL = "https://saphirdetailing.fr/admin/dashboard"; 
 const LOGO_URL = "https://rfmebohbwdwjjktlaniq.supabase.co/storage/v1/object/public/public-bucket/logo.png";
 
 // --- GESTION CORS SÉCURISÉE ---
