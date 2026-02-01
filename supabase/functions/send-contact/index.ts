@@ -68,7 +68,7 @@ const generateEmailHtml = (title: string, content: string, isClient: boolean = f
 
     <div style="background-color: #000000; padding: 20px; text-align: center; border-top: 1px solid #333;">
       <p style="margin: 0; color: #64748b; font-size: 12px;">
-        295 route d'Aulus, 09140 Oust<br>
+        231 route d'Aulus, 09140 Oust<br>
         06 68 84 06 27 • contact@saphirdetailing.fr
       </p>
     </div>

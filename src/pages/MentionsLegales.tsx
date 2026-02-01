@@ -27,7 +27,7 @@ const MentionsLegales = () => {
               <ul className="list-disc pl-5 space-y-2 marker:text-primary">
                 <li><strong>Raison sociale / Nom :</strong> Saphir Detailing</li>
                 <li><strong>Statut Juridique :</strong> Auto-entrepreneur </li>
-                <li><strong>Siège Social :</strong> 295 Route d'Aulus, Oust 09140</li>
+                <li><strong>Siège Social :</strong> 231 Route d'Aulus, Oust 09140</li>
                 <li><strong>SIRET :</strong> 79834517900047 </li>
                 <li><strong>Email :</strong> contact@saphirdetailing.fr</li>
                 <li><strong>Téléphone :</strong> 06 68 04 84 06 27</li>

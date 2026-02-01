@@ -78,7 +78,7 @@ const Contact = () => {
     {
       icon: MapPin,
       title: "Notre Atelier",
-      content: "295 route d'Aulus, Oust 09140",
+      content: "231 route d'Aulus, Oust 09140",
       action: "Y aller",
       link: "#"
     },
@@ -185,7 +185,7 @@ const Contact = () => {
 
                 <div className="relative w-full flex-1 min-h-[300px] rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
                   <iframe
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d4858.478509349786!2d1.2249255774551229!3d42.868088371150186!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x12af35449cb79947%3A0x207b6e64a7b5810!2s295%20Rte%20d'Aulus%2C%2009140%20Oust!5e1!3m2!1sfr!2sfr!4v1769881377848!5m2!1sfr!2sfr"
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2924.0872474178877!2d1.219938877292707!3d42.87100260266707!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x12af35448575ad3b%3A0x34281868e7c37bad!2s231%20Rte%20d&#39;Aulus%2C%2009140%20Oust!5e0!3m2!1sfr!2sfr!4v1769980030595!5m2!1sfr!2sfr"
                     width="100%"
                     height="100%"
                     style={{ border: 0 }} 

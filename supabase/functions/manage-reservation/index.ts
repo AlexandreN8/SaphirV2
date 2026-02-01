@@ -55,7 +55,7 @@ const generateEmailHtml = (title: string, content: string, actionButton: { text:
       ${isClient ? `<div style="margin-top:30px;padding:15px;background-color:#1e1e1e;border-left:4px solid #3b82f6;border-radius:4px;"><p style="margin:0;font-size:14px;color:#94a3b8;">Saphir Detailing - L'excellence automobile.</p></div>` : ''}
     </div>
     <div style="background-color:#000000;padding:20px;text-align:center;border-top:1px solid #333;">
-      <p style="margin:0;color:#64748b;font-size:12px;">295 route d'Aulus, 09140 Oust • 06 68 84 06 27</p>
+      <p style="margin:0;color:#64748b;font-size:12px;">231 route d'Aulus, 09140 Oust • 06 68 84 06 27</p>
       <p style="margin:5px 0 0;"><a href="${SITE_URL}" style="color:#3b82f6;text-decoration:none;font-size:12px;">saphirdetailing.fr</a></p>
     </div>
   </div>
@@ -116,7 +116,7 @@ serve(async (req: Request) => {
                 body: JSON.stringify({
                     from: SENDER_EMAIL, to: [record.client_email],
                     subject: "✅ Réservation Confirmée - Saphir Detailing",
-                    html: generateEmailHtml(`Rendez-vous Confirmé`, `<p>Bonjour ${record.client_name.split(' ')[0]},</p><p>Votre réservation pour le <strong>${formatDate(record.start_at)}</strong> a été validée par l'atelier.</p><div style="background:#1e1e1e; padding:15px; border-radius:8px; margin:20px 0; border-left:4px solid #10b981;"><p style="margin:0; font-weight:bold; color:#10b981;">Créneau verrouillé</p><p style="margin:5px 0 0; font-size:14px; color:#94a3b8;">Prestation : ${record.service_name}</p></div><p>Nous vous attendons à l'atelier au : 295 route d'Aulus, 09140 Oust.</p>`, { text: "Itinéraire GPS", url: "https://www.google.com/maps/dir//295+Rte+d'Aulus,+09140+Oust" }, true)
+                    html: generateEmailHtml(`Rendez-vous Confirmé`, `<p>Bonjour ${record.client_name.split(' ')[0]},</p><p>Votre réservation pour le <strong>${formatDate(record.start_at)}</strong> a été validée par l'atelier.</p><div style="background:#1e1e1e; padding:15px; border-radius:8px; margin:20px 0; border-left:4px solid #10b981;"><p style="margin:0; font-weight:bold; color:#10b981;">Créneau verrouillé</p><p style="margin:5px 0 0; font-size:14px; color:#94a3b8;">Prestation : ${record.service_name}</p></div><p>Nous vous attendons à l'atelier au : 231 route d'Aulus, 09140 Oust.</p>`, { text: "Itinéraire GPS", url: "https://www.google.com/maps/dir//231+Rte+d'Aulus,+09140+Oust" }, true)
                 }),
             });
         }

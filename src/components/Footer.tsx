@@ -136,7 +136,7 @@ export const Footer = () => {
                 <li className="flex items-start gap-3">
                   <MapPin className="w-5 h-5 text-primary shrink-0 mt-0.5" />
                   <span className="text-sm text-gray-400">
-                    295 route d'Aulus<br />
+                    231 route d'Aulus<br />
                     09140 Oust, France
                   </span>
                 </li>
