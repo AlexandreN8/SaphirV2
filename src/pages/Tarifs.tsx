@@ -138,6 +138,7 @@ const Tarifs = () => {
     <SeoHead 
       title="Tarifs Detailing & Nettoyage Auto - Saphir Detailing"
       description="Découvrez nos forfaits : Nettoyage intérieur, Polissage carrosserie et Traitement Céramique. Prix transparents pour Citadine, Berline et SUV en Ariège."
+      canonicalUrl="https://www.saphirdetailing.fr/tarifs"
     />
 
     <div className="bg-[#050505] min-h-screen relative overflow-x-hidden">

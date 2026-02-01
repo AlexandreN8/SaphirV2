@@ -285,6 +285,7 @@ const Reservation = () => {
       <SeoHead 
         title="Réserver votre prestation en ligne"
         description="Choisissez votre formule et votre créneau en ligne. Réservation simple et rapide pour l'entretien esthétique de votre véhicule."
+        canonicalUrl="https://www.saphirdetailing.fr/reservation"
       />
       
       <div className="flex flex-col min-h-screen">

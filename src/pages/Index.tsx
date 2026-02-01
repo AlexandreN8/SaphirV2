@@ -56,6 +56,7 @@ const Index = () => {
       <SeoHead 
           title="Saphir Detailing | Rénovation & Protection Céramique Ariège (09)"
           description="Centre expert en detailing automobile à Oust. Polissage, lustrage, nettoyage intérieur et traitement céramique Gyeon. Redonnez l'éclat du neuf à votre véhicule."
+          canonicalUrl="https://www.saphirdetailing.fr/"
         />  
       <div>
         {/* Hero Section with Parallax */}

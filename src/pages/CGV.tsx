@@ -7,6 +7,7 @@ const CGV = () => {
       <SeoHead 
         title="Conditions Générales de Vente - Saphir Detailing"
         description="CGV applicables aux prestations de detailing et mécanique automobile."
+        canonicalUrl="https://www.saphirdetailing.fr/cgv"
       />
 
       <div className="min-h-screen bg-[#050505] text-gray-300 py-20 px-4 md:px-8">

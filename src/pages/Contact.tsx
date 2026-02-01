@@ -109,6 +109,7 @@ const Contact = () => {
       <SeoHead 
         title="Contacter Saphir Detailing à Oust (09)"
         description="Prenez rendez-vous pour un devis gratuit. Notre atelier est situé à Oust en Ariège. Téléphone, Horaires et formulaire de contact."
+        canonicalUrl="https://www.saphirdetailing.fr/contact"
       />
       <div className="bg-[#050505] min-h-screen relative overflow-x-hidden">
         

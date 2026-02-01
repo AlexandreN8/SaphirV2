@@ -7,6 +7,7 @@ const MentionsLegales = () => {
       <SeoHead 
         title="Mentions Légales - Saphir Detailing"
         description="Informations légales, éditeur du site, hébergeur et politique de confidentialité de Saphir Detailing."
+        canonicalUrl="https://www.saphirdetailing.fr/mentions-legales"
       />
 
       <div className="min-h-screen bg-[#050505] text-gray-300 py-20 px-4 md:px-8">

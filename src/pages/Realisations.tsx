@@ -151,6 +151,7 @@ const Realisations = () => {
       <SeoHead 
         title="Nos Réalisations & Avant/Après - Saphir Detailing"
         description="Galerie de nos rénovations automobiles."
+        canonicalUrl="https://www.saphirdetailing.fr/realisations"
       />
       
       <div className="bg-[#050505] min-h-screen relative overflow-x-hidden">
