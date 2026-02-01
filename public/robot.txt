@@ -1,6 +1,6 @@
 User-agent: *
 Allow: /
 Disallow: /admin/
-Disallow: /dashboard/
+Disallow: /admin/dashboard
 
-Sitemap: https://saphirdetailing.fr/sitemap.xml 
+Sitemap: https://www.saphirdetailing.fr/sitemap.xml
