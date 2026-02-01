@@ -3,9 +3,9 @@ import { motion, useScroll, useTransform } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Sparkles, Wrench, ChevronRight, Shield, Droplets, Brush, Car, ArrowRight, Play } from 'lucide-react';
 import GoogleReviews from '@/components/GoogleReviews';
-import heroDetailing from '@/assets/hero-detailing.jpg';
-import ceramicCoating from '@/assets/ceramic-coating.jpg';
-import meca from '@/assets/meca.jpg';
+import heroDetailing from '@/assets/hero-detailing.webp';
+import ceramicCoating from '@/assets/ceramic-coating.webp';
+import meca from '@/assets/meca.webp';
 import SeoHead from '@/components/SeoHead';
 
 const processSteps = [
