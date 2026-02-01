@@ -4,23 +4,23 @@ import { Eye, Camera, Wand2, Sparkles } from 'lucide-react';
 import SeoHead from '@/components/SeoHead';
 
 // IMAGES
-import imgInterieur1 from '@/assets/realisations/mot_before.jpeg';
-import imgInterieur2 from '@/assets/realisations/mot_after.jpeg';
-import imgExterieur1 from '@/assets/realisations/ext_before.jpeg';
-import imgExterieur2 from '@/assets/realisations/ext_after.jpeg';
+import imgInterieur1 from '@/assets/realisations/mot_before.webp';
+import imgInterieur2 from '@/assets/realisations/mot_after.webp';
+import imgExterieur1 from '@/assets/realisations/ext_before.webp';
+import imgExterieur2 from '@/assets/realisations/ext_after.webp';
 
-import imgExtB1 from '@/assets/grid/exterieur_before.jpeg';
-import imgExtB2 from '@/assets/grid/exterieur_after.jpeg';
-import imgIntI1 from '@/assets/grid/pe2.jpeg';
-import imgIntI2 from '@/assets/grid/pe1.jpeg';
-import phare1 from '@/assets/grid/phare_before.jpeg';
-import phare2 from '@/assets/grid/phare_after.jpeg';
-import dacia1 from '@/assets/grid/dacia1.jpeg';
-import dacia2 from '@/assets/grid/dacia2.jpeg';
-import coffre1 from '@/assets/grid/coffre1.jpeg';
-import coffre2 from '@/assets/grid/coffre2.jpeg';
-import board1 from '@/assets/grid/boardB1.jpeg';
-import board2 from '@/assets/grid/boardB2.jpeg';
+import imgExtB1 from '@/assets/grid/exterieur_before.webp';
+import imgExtB2 from '@/assets/grid/exterieur_after.webp';
+import imgIntI1 from '@/assets/grid/pe2.webp';
+import imgIntI2 from '@/assets/grid/pe1.webp';
+import phare1 from '@/assets/grid/phare_before.webp';
+import phare2 from '@/assets/grid/phare_after.webp';
+import dacia1 from '@/assets/grid/dacia1.webp';
+import dacia2 from '@/assets/grid/dacia2.webp';
+import coffre1 from '@/assets/grid/coffre1.webp';
+import coffre2 from '@/assets/grid/coffre2.webp';
+import board1 from '@/assets/grid/boardB1.webp';
+import board2 from '@/assets/grid/boardB2.webp';
 
 // --- DATA ---
 const comparisons = [
