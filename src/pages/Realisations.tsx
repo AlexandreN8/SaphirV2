@@ -4,23 +4,23 @@ import { Eye, Camera, Wand2, Sparkles } from 'lucide-react';
 import SeoHead from '@/components/SeoHead';
 
 // IMAGES
-import imgInterieur1 from '/realisations/mot_before.jpeg';
-import imgInterieur2 from '/realisations/mot_after.jpeg';
-import imgExterieur1 from '/realisations/ext_before.jpeg';
-import imgExterieur2 from '/realisations/ext_after.jpeg';
+import imgInterieur1 from '@/assets/realisations/mot_before.jpeg';
+import imgInterieur2 from '@/assets/realisations/mot_after.jpeg';
+import imgExterieur1 from '@/assets/realisations/ext_before.jpeg';
+import imgExterieur2 from '@/assets/realisations/ext_after.jpeg';
 
-import imgExtB1 from '/bento/exterieur_before.jpeg';
-import imgExtB2 from '/bento/exterieur_after.jpeg';
-import imgIntI1 from '/bento/pe2.jpeg';
-import imgIntI2 from '/bento/pe1.jpeg';
-import phare1 from '/bento/phare_before.jpeg';
-import phare2 from '/bento/phare_after.jpeg';
-import dacia1 from '/bento/dacia1.jpeg';
-import dacia2 from '/bento/dacia2.jpeg';
-import coffre1 from '/bento/coffre1.jpeg';
-import coffre2 from '/bento/coffre2.jpeg';
-import board1 from '/bento/boardB1.jpeg';
-import board2 from '/bento/boardB2.jpeg';
+import imgExtB1 from '@/assets/grid/exterieur_before.jpeg';
+import imgExtB2 from '@/assets/grid/exterieur_after.jpeg';
+import imgIntI1 from '@/assets/grid/pe2.jpeg';
+import imgIntI2 from '@/assets/grid/pe1.jpeg';
+import phare1 from '@/assets/grid/phare_before.jpeg';
+import phare2 from '@/assets/grid/phare_after.jpeg';
+import dacia1 from '@/assets/grid/dacia1.jpeg';
+import dacia2 from '@/assets/grid/dacia2.jpeg';
+import coffre1 from '@/assets/grid/coffre1.jpeg';
+import coffre2 from '@/assets/grid/coffre2.jpeg';
+import board1 from '@/assets/grid/boardB1.jpeg';
+import board2 from '@/assets/grid/boardB2.jpeg';
 
 // --- DATA ---
 const comparisons = [
@@ -29,6 +29,7 @@ const comparisons = [
     title: 'Soin Exterieur',
     subtitle: 'Correction Complète',
     description: 'Suppression des micro-rayures (swirls) et application céramique Gtechniq.',
+    alt: 'Rénovation Extérieure d\'une citadine',
     before: imgExterieur1,
     after: imgExterieur2,
   },
@@ -37,6 +38,7 @@ const comparisons = [
     title: 'Soin du détail',
     subtitle: 'Rénovation Moteur',
     description: 'Nettoyage complet du compartiment moteur avec produits spécifiques.',
+    alt: 'Rénovation Moteur d\'un véhicule',
     before: imgInterieur1,
     after: imgInterieur2,
   },
@@ -89,7 +91,7 @@ const galleryImages = [
 ];
 
 // --- COMPONENT SLIDER ---
-const BeforeAfterSlider = ({ before, after }: { before: string; after: string }) => {
+const BeforeAfterSlider = ({ before, after, alt }: { before: string; after: string; alt: string }) => {
   const [sliderPosition, setSliderPosition] = useState(50);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -110,14 +112,14 @@ const BeforeAfterSlider = ({ before, after }: { before: string; after: string })
         onTouchMove={(e) => handleMove(e.touches[0].clientX, e.currentTarget.getBoundingClientRect())}
         onClick={(e) => handleMove(e.clientX, e.currentTarget.getBoundingClientRect())}
       />
-      <img src={after} alt="Après" className="absolute inset-0 w-full h-full object-cover" />
+      <img src={after} alt={`Après - ${alt}`} className="absolute inset-0 w-full h-full object-cover" />
       <div
         className="absolute inset-0 overflow-hidden border-r-2 border-primary/50"
         style={{ width: `${sliderPosition}%` }}
       >
         <img
           src={before}
-          alt="Avant"
+          alt={`Avant - ${alt}`}
           className="absolute inset-0 w-full h-full object-cover"
           style={{ minWidth: `${100 / (sliderPosition / 100)}%` }}
         />
@@ -222,7 +224,7 @@ const Realisations = () => {
                       <p className="text-gray-400">{comparison.description}</p>
                     </div>
                   </div>
-                  <BeforeAfterSlider before={comparison.before} after={comparison.after} />
+                  <BeforeAfterSlider before={comparison.before} after={comparison.after} alt={comparison.alt} />
                 </motion.div>
               ))}
             </div>

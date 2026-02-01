@@ -2,20 +2,26 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
-  BarChart, Bar, Cell
+  BarChart, Bar, Cell, LineChart, Line
 } from 'recharts';
 import { 
-  TrendingUp, DollarSign, Award, Activity, Users, 
-  MousePointer2, Globe, ArrowUpRight, ArrowDownRight, Wallet, AlertCircle
+  TrendingUp, Activity, Users, MousePointer2, Globe, Wallet, AlertCircle, Clock
 } from 'lucide-react';
 
 const AdminAnalytics = () => {
   const [activeView, setActiveView] = useState<'finance' | 'traffic'>('finance');
   
-  // States
+  // States Data
   const [financeData, setFinanceData] = useState<any[]>([]);
   const [packData, setPackData] = useState<any[]>([]);
-  const [trafficData, setTrafficData] = useState<any>({ pages: [], devices: [] });
+  
+  // Traffic Data
+  const [trafficData, setTrafficData] = useState<any>({ 
+    pages: [], 
+    devices: [],
+    dailyVisits: [], 
+    hourlyTraffic: [] 
+  });
   
   const [kpi, setKpi] = useState({ 
     forecastRevenue: 0, 
@@ -31,20 +37,21 @@ const AdminAnalytics = () => {
 
   useEffect(() => {
     const processData = async () => {
-      // 1. DATA FINANCE (Réservations)
+      // 1. DATA FINANCE
       const { data: resas } = await supabase
         .from('reservations')
         .select('total_price, start_at, service_name, status, payment_status')
         .neq('status', 'cancelled')
         .order('start_at', { ascending: true });
 
-      // 2. DATA TRAFFIC (Logs)
+      // 2. DATA TRAFFIC
       const { data: logs } = await supabase
         .from('traffic_logs')
         .select('*');
 
       if (resas && logs) {
-        // --- TRAITEMENT FINANCE ---
+        
+        // --- TRAITEMENT FINANCE  ---
         const monthlyStats: { [key: number]: { forecast: number, actual: number } } = {};
         const packStats: { [key: string]: number } = {};
         let totalForecast = 0;
@@ -57,7 +64,6 @@ const AdminAnalytics = () => {
           if (date.getFullYear() === currentYear && r.status === 'confirmed') {
             const month = date.getMonth();
             const price = Number(r.total_price) || 0;
-            
             monthlyStats[month].forecast += price;
             totalForecast += price;
             if (r.payment_status === 'paid') {
@@ -82,12 +88,39 @@ const AdminAnalytics = () => {
           .map(key => ({ name: key, value: packStats[key] }))
           .sort((a, b) => b.value - a.value);
 
-        // --- TRAITEMENT TRAFFIC ---
-        // Visiteurs Uniques (basé sur session_id)
+        // --- TRAITEMENT TRAFFIC AVANCÉ ---
+        
+        // 1. Visiteurs Uniques & Total
         const uniqueVisitors = new Set(logs.map(l => l.session_id)).size;
         const totalPageViews = logs.length;
 
-        // Top Pages
+        // 2. Visites par Jour (Daily Visits) - 7 derniers jours
+        const last7Days = [...Array(7)].map((_, i) => {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            return d.toISOString().split('T')[0];
+        }).reverse();
+
+        const dailyCounts = last7Days.map(dateStr => {
+            const count = logs.filter(l => l.created_at.startsWith(dateStr)).length;
+            return {
+                date: new Date(dateStr).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' }),
+                visits: count
+            };
+        });
+
+        // 3. Trafic par Heure
+        const hourCounts = new Array(24).fill(0);
+        logs.forEach(l => {
+            const hour = new Date(l.created_at).getHours();
+            hourCounts[hour]++;
+        });
+        const hourlyData = hourCounts.map((count, hour) => ({
+            hour: `${hour}h`,
+            visits: count
+        }));
+
+        // 4. Top Pages
         const pageCounts: { [key: string]: number } = {};
         logs.forEach(l => { pageCounts[l.path] = (pageCounts[l.path] || 0) + 1; });
         const topPages = Object.entries(pageCounts)
@@ -95,7 +128,7 @@ const AdminAnalytics = () => {
           .sort((a, b) => b.views - a.views)
           .slice(0, 5);
 
-        // Devices
+        // 5. Devices
         const deviceCounts = { Mobile: 0, Desktop: 0 };
         logs.forEach(l => { 
           if(l.device_type === 'Mobile') deviceCounts.Mobile++;
@@ -106,13 +139,13 @@ const AdminAnalytics = () => {
           { name: 'Desktop', value: deviceCounts.Desktop }
         ];
 
-        // Taux de conversion RÉEL (Résas Confirmées / Visiteurs Uniques)
+        // Conversion
         const confirmedResasCount = resas.filter(r => r.status === 'confirmed').length;
         const conversion = uniqueVisitors > 0 ? (confirmedResasCount / uniqueVisitors) * 100 : 0;
 
         setFinanceData(chartData);
         setPackData(barData);
-        setTrafficData({ pages: topPages, devices: deviceChart });
+        setTrafficData({ pages: topPages, devices: deviceChart, dailyVisits: dailyCounts, hourlyTraffic: hourlyData });
         
         setKpi({
           forecastRevenue: totalForecast,
@@ -177,18 +210,18 @@ const AdminAnalytics = () => {
 
             <div className="bg-[#0f0f0f] border border-white/5 p-8 rounded-[2.5rem] shadow-2xl flex flex-col">
               <div className="flex items-center gap-4 mb-8">
-                <div className="p-3 bg-white/5 rounded-2xl border border-white/10"><Award className="w-5 h-5 text-gray-400" /></div>
+                <div className="p-3 bg-white/5 rounded-2xl border border-white/10"><Users className="w-5 h-5 text-gray-400" /></div>
                 <h3 className="text-[11px] font-bold uppercase tracking-[0.25em] text-gray-400">Top Services</h3>
               </div>
               <div className="flex-1 w-full min-h-[250px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={packData} layout="vertical" margin={{ left: 0, right: 20 }}>
-                     <XAxis type="number" hide />
-                     <YAxis dataKey="name" type="category" width={90} tick={{fill: '#888', fontSize: 9, fontWeight: 700}} tickLine={false} axisLine={false} />
-                     <Tooltip cursor={{fill: 'transparent'}} contentStyle={{ backgroundColor: '#000', border: '1px solid #333', borderRadius: '8px' }} />
-                     <Bar dataKey="value" barSize={16} radius={[0, 4, 4, 0]}>
-                       {packData.map((entry, index) => (<Cell key={`cell-${index}`} fill={index === 0 ? '#d4af37' : '#333'} />))}
-                     </Bar>
+                      <XAxis type="number" hide />
+                      <YAxis dataKey="name" type="category" width={90} tick={{fill: '#888', fontSize: 9, fontWeight: 700}} tickLine={false} axisLine={false} />
+                      <Tooltip cursor={{fill: 'transparent'}} contentStyle={{ backgroundColor: '#000', border: '1px solid #333', borderRadius: '8px' }} />
+                      <Bar dataKey="value" barSize={16} radius={[0, 4, 4, 0]}>
+                        {packData.map((entry, index) => (<Cell key={`cell-${index}`} fill={index === 0 ? '#d4af37' : '#333'} />))}
+                      </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -207,9 +240,46 @@ const AdminAnalytics = () => {
             <KPICard icon={Globe} label="Pages / Visiteur" value={kpi.visitors > 0 ? (kpi.pageViews / kpi.visitors).toFixed(1) : '0'} sub="Moyenne engagement" />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* TOP PAGES TABLE */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            {/* GRAPHIQUE VISITES 7 DERNIERS JOURS  */}
+            <div className="lg:col-span-2 bg-[#0f0f0f] border border-white/5 p-8 rounded-[2.5rem] shadow-2xl">
+                <div className="flex items-center gap-4 mb-8">
+                    <div className="p-3 bg-blue-500/10 rounded-2xl border border-blue-500/20"><Activity className="w-5 h-5 text-blue-500" /></div>
+                    <h3 className="text-[11px] font-bold uppercase tracking-[0.25em] text-gray-400">Activité (7 jours)</h3>
+                </div>
+                <div className="h-[250px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={trafficData.dailyVisits}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#222" vertical={false} />
+                            <XAxis dataKey="date" stroke="#444" tick={{fill: '#666', fontSize: 10}} tickLine={false} axisLine={false} />
+                            <YAxis stroke="#444" tick={{fill: '#666', fontSize: 10}} tickLine={false} axisLine={false} />
+                            <Tooltip contentStyle={{ backgroundColor: '#050505', border: '1px solid #222' }} />
+                            <Line type="monotone" dataKey="visits" stroke="#3b82f6" strokeWidth={3} dot={{r: 4, fill:'#050505', strokeWidth: 2}} activeDot={{r: 6}} />
+                        </LineChart>
+                    </ResponsiveContainer>
+                </div>
+            </div>
+
+            {/* HEURES DE POINTE  */}
             <div className="bg-[#0f0f0f] border border-white/5 p-8 rounded-[2.5rem] shadow-2xl">
+                <div className="flex items-center gap-4 mb-8">
+                    <div className="p-3 bg-purple-500/10 rounded-2xl border border-purple-500/20"><Clock className="w-5 h-5 text-purple-500" /></div>
+                    <h3 className="text-[11px] font-bold uppercase tracking-[0.25em] text-gray-400">Heures de pointe</h3>
+                </div>
+                <div className="h-[250px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={trafficData.hourlyTraffic}>
+                            <XAxis dataKey="hour" stroke="#444" tick={{fill: '#666', fontSize: 8}} tickLine={false} axisLine={false} interval={2} />
+                            <Tooltip cursor={{fill: 'transparent'}} contentStyle={{ backgroundColor: '#000', border: '1px solid #333' }} />
+                            <Bar dataKey="visits" fill="#8b5cf6" radius={[2, 2, 0, 0]} />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </div>
+            </div>
+
+            {/* TOP PAGES TABLE */}
+            <div className="lg:col-span-2 bg-[#0f0f0f] border border-white/5 p-8 rounded-[2.5rem] shadow-2xl">
               <div className="flex items-center gap-4 mb-8">
                 <h3 className="text-[11px] font-bold uppercase tracking-[0.25em] text-gray-400">Pages les plus vues</h3>
               </div>

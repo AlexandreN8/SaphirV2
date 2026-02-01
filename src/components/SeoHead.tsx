@@ -10,7 +10,7 @@ interface SeoHeadProps {
 const SeoHead = ({ title, description, canonicalUrl, image }: SeoHeadProps) => {
   const siteName = "Saphir Detailing";
     const siteUrl = import.meta.env.PROD 
-        ? 'https://saphir-v2-nax9.vercel.app/' 
+        ? 'https://saphirdetailing.fr' 
         : 'http://localhost:5173';       
 
     const fullTitle = `${title} | ${siteName}`;

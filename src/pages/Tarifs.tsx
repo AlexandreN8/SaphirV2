@@ -181,7 +181,7 @@ const Tarifs = () => {
       </section>
 
       {/* --- VEHICLE SELECTOR --- */}
-      <section className="sticky top-20 z-40 py-6 bg-[#050505]/80 backdrop-blur-lg border-y border-white/5">
+      <section className="sticky top-20 z-20 py-6 bg-[#050505]/80 backdrop-blur-lg border-y border-white/5">
         <div className="container px-4 md:px-6 flex justify-center">
           <div className="inline-flex bg-[#0f0f0f] p-1.5 rounded-2xl border border-white/10 shadow-2xl">
             {vehicleTypes.map((type) => (
@@ -445,7 +445,7 @@ const OptionCard = ({ option, idx }: any) => (
         </div>
         <div>
            <span className="font-medium text-gray-200 text-sm block">{option.name}</span>
-           <span className="text-[10px] text-gray-500 block">{option.note}</span>
+           <span className="text-[12px] text-gray-500 block">{option.note}</span>
         </div>
       </div>
       <span className="font-bold text-white bg-black/20 px-2 py-1 rounded-md text-xs whitespace-nowrap">{option.price}</span>

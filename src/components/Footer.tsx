@@ -82,17 +82,6 @@ export const Footer = () => {
                 >
                   <TiktokIcon className="w-5 h-5" />
                 </a>
-
-                {/* Snapchat */}
-                <a 
-                  href="https://www.snapchat.com/add/jo-nettoie?share_id=E132RfRsu2w&locale=fr-FR" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-primary hover:text-white hover:border-primary transition-all text-gray-400"
-                  aria-label="Snapchat"
-                >
-                  <SnapchatIcon className="w-5 h-5" />
-                </a>
               </div>
             </div>
 
@@ -159,8 +148,8 @@ export const Footer = () => {
                 </li>
                 <li className="flex items-center gap-3">
                   <Mail className="w-5 h-5 text-primary shrink-0" />
-                  <a href="mailto:contact@saphir-detailing.fr" className="text-sm text-gray-400 hover:text-primary transition-colors">
-                    Saphir.detailing@gmail.com
+                  <a href="mailto:contact@saphirdetailing.fr" className="text-sm text-gray-400 hover:text-primary transition-colors">
+                    contact@saphirdetailing.fr
                   </a>
                 </li>
                 <li className="flex items-start gap-3">

@@ -24,7 +24,7 @@ export const Layout = () => {
       "latitude": "42.876", 
       "longitude": "1.212"
     },
-    "url": "https://saphir-v2-nax9.vercel.app/", // TODO Remplacer par l'URL réelle
+    "url": "https://www.saphirdetailing.fr/", 
     "telephone": "+33668840627", 
     "priceRange": "$$",
     "openingHoursSpecification": [

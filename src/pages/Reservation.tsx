@@ -3,11 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import SeoHead from '@/components/SeoHead';
+import { Turnstile } from '@marsidev/react-turnstile';
 
 import { 
   CarFront, Truck, Car, ChevronRight, ChevronLeft, Calendar as CalendarIcon, 
   Check, Sparkles, Shield, Droplet, Wrench, Disc, Settings, User, 
-  ArrowRight, Clock, Info
+  ArrowRight, Clock
 } from 'lucide-react';
 
 // --- DONNÉES ---
@@ -62,6 +63,11 @@ const Reservation = () => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [monthReservations, setMonthReservations] = useState<any[]>([]);
   const [formData, setFormData] = useState({ firstName: '', lastName: '', email: '', phone: '', notes: '' });
+  
+  // --- STATES SECURITÉ ---
+  const [token, setToken] = useState<string | null>(null);
+  const [honeypot, setHoneypot] = useState(""); 
+
   const totalSteps = 4;
   const isEmailValid = (email: string) => emailRegex.test(email);
   const isPhoneValid = (phone: string) => phoneRegex.test(phone);
@@ -131,52 +137,40 @@ const Reservation = () => {
     fetchMonthData();
   }, [currentMonth]);
 
-  // --- MODIFICATION 1 : Créneaux horaires ---
   const timeSlots = useMemo(() => {
     const slots = [];
-    // Matin : 09h00 à 11h30 (pour finir à 12h00 max pour le dernier créneau de 30min)
     for (let h = 9; h < 12; h += 0.5) slots.push(`${Math.floor(h).toString().padStart(2, '0')}:${h % 1 === 0 ? '00' : '30'}`);
-    // Après-midi : 14h00 à 17h30 (pour finir à 18h00 max)
     for (let h = 14; h < 18; h += 0.5) slots.push(`${Math.floor(h).toString().padStart(2, '0')}:${h % 1 === 0 ? '00' : '30'}`);
     return slots;
   }, []);
 
-  // --- MODIFICATION 2 : Calcul fin de prestation (Week-end et Pause midi) ---
   const calculateEndDate = (startDate: Date, durationHours: number) => {
     let end = new Date(startDate);
     let remaining = durationHours;
     
-    // On avance par tranche de 30 minutes
     while (remaining > 0) {
       end.setMinutes(end.getMinutes() + 30);
       const h = end.getHours() + end.getMinutes() / 60;
-      const day = end.getDay(); // 0 = Dimanche, 6 = Samedi
+      const day = end.getDay();
 
-      // Si on tombe sur le week-end (Samedi ou Dimanche), on passe au Lundi 9h00
       if (day === 6 || day === 0) {
         end.setDate(end.getDate() + (day === 6 ? 2 : 1));
         end.setHours(9, 0, 0, 0);
         continue;
       }
-
-      // Pause midi : Si on dépasse 12h00, on reprend à 14h00
       if (h > 12 && h < 14) {
         end.setHours(14, 0, 0, 0);
-        continue; // On continue la boucle sans déduire de temps car on a sauté la pause
+        continue;
       }
-
-      // Soir : Si on dépasse 18h00, on reprend le lendemain 9h00
       if (h > 18 || (h === 18 && end.getMinutes() > 0)) {
         end.setDate(end.getDate() + 1);
         end.setHours(9, 0, 0, 0);
-        // On vérifie si le lendemain est un week-end
         const nextDay = end.getDay();
         if (nextDay === 6 || nextDay === 0) {
             end.setDate(end.getDate() + (nextDay === 6 ? 2 : 1));
         }
         continue;
       }
-
       remaining -= 0.5;
     }
     return end;
@@ -191,13 +185,10 @@ const Reservation = () => {
     return true;
   };
 
-  // --- MODIFICATION 3 : Vérification jours disponibles ---
   const isDayAvailable = (date: Date) => {
     const today = new Date(); today.setHours(0,0,0,0);
-    // On bloque Dimanche (0) ET Samedi (6)
     if (date < today || date.getDay() === 0 || date.getDay() === 6) return false;
 
-    // Simulation avec les nouveaux créneaux
     const slotsToCheck = [];
     for (let h = 9; h < 12; h += 0.5) slotsToCheck.push(h);
     for (let h = 14; h < 18; h += 0.5) slotsToCheck.push(h);
@@ -211,12 +202,26 @@ const Reservation = () => {
   };
 
   const handleSubmit = async () => {
+    // 1. SECURITÉ CLIENT : Token Turnstile requis
+    if (!token) {
+        toast.error("Veuillez valider la sécurité anti-robot.");
+        return;
+    }
+
+    // 2. SECURITÉ HONEYPOT : Si rempli, on simule un succès (Bot)
+    if (honeypot) {
+        console.log("Honeypot triggered");
+        setIsSuccess(true); // Fake success
+        return;
+    }
+
     if (!selectedDate || !selectedTime) return;
     const startDate = new Date(selectedDate);
     const [h, m] = selectedTime.split(':').map(Number);
     startDate.setHours(h, m, 0, 0);
     const endDate = calculateEndDate(startDate, totalDuration);
 
+    // 3. ENREGISTREMENT DB 
     const { data, error } = await supabase.rpc('reserve_multi_day', {
       p_client_name: `${formData.firstName} ${formData.lastName}`,
       p_client_email: formData.email,
@@ -230,13 +235,31 @@ const Reservation = () => {
       p_service_details: { pack: selectedPack, detailing_options: selectedDetailingOptions, mechanic_options: selectedMechanicOptions, notes: formData.notes, is_sur_devis: isSurDevis }
     });
 
-    if (error || data?.error) {
+    if (error || (data && data.error)) {
       toast.error(data?.error || "Erreur de connexion.");
       const { data: newData } = await supabase.from('reservations').select('start_at, end_at').neq('status', 'cancelled');
       if (newData) setMonthReservations(newData);
     } else {
+      
+      // 4. ENVOI EMAILS (via Edge Function)
+      const reservationData = {
+        client_name: `${formData.firstName} ${formData.lastName}`,
+        client_email: formData.email,
+        client_phone: formData.phone,
+        start_at: startDate.toISOString(),
+        service_name: detailingPacks.find(p => p.id === selectedPack)?.name,
+        total_price: isSurDevis ? 0 : calculateTotal(),
+        duration_hours: totalDuration,
+        vehicle_info: { label: vehicleTypes.find(v => v.id === selectedVehicle)?.name },
+        service_details: { notes: formData.notes }
+      };
+
+      supabase.functions.invoke('manage-reservation', {
+        body: { type: 'create', record: reservationData, token }
+      });
+
       setIsSuccess(true);
-      toast.success("Réservation effectuée !");
+      toast.success("Réservation effectuée ! Un email vous a été envoyé.");
     }
   };
 
@@ -245,10 +268,10 @@ const Reservation = () => {
   };
 
   const isFormValid = 
-  formData.firstName.length >= 2 &&
+    formData.firstName.length >= 2 &&
     formData.lastName.length >= 2 &&
     isEmailValid(formData.email) &&
-    isPhoneValid(formData.phone);   
+    isPhoneValid(formData.phone); 
     
   const canProceed = () => {
     if (step === 1) return selectedVehicle !== null;
@@ -408,7 +431,7 @@ const Reservation = () => {
                     </motion.div>
                   )}
 
-                  {/* STEP 3: DATE (AVEC DURÉE ESTIMÉE) */}
+                  {/* STEP 3: DATE */}
                   {step === 3 && (
                     <motion.div key="step3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="max-w-5xl mx-auto pb-10">
                       <h2 className="text-3xl font-bold font-display text-white text-center mb-8">Planning</h2>
@@ -483,7 +506,7 @@ const Reservation = () => {
                     </motion.div>
                   )}
 
-                  {/* STEP 4: RECAP AVEC DURÉE */}
+                  {/* STEP 4: RECAP & CONFIRMATION */}
                   {step === 4 && (
                     <motion.div key="step4" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="max-w-6xl mx-auto pb-10">
                       <h2 className="text-3xl font-bold font-display text-white text-center mb-10">Finalisation</h2>
@@ -492,7 +515,21 @@ const Reservation = () => {
                           <div className="bg-[#0f0f0f] border border-white/10 rounded-3xl p-6 md:p-8 h-full">
                             <div className="flex items-center gap-3 mb-6"><div className="p-2 bg-primary/20 rounded-lg text-primary"><User className="w-5 h-5" /></div><h3 className="text-xl font-bold text-white">Vos Coordonnées</h3></div>
                             
-                            <div className="space-y-4">
+                            <div className="space-y-4 relative">
+                              {/* --- HONEYPOT FIELD --- */}
+                              <div className="absolute opacity-0 -z-50 select-none pointer-events-none h-0 w-0 overflow-hidden">
+                                <label htmlFor="confirm_email_res">Ne pas remplir</label>
+                                <input
+                                    type="text"
+                                    id="confirm_email_res"
+                                    name="confirm_email"
+                                    tabIndex={-1}
+                                    autoComplete="off"
+                                    value={honeypot}
+                                    onChange={(e) => setHoneypot(e.target.value)}
+                                />
+                              </div>
+
                               <div className="grid grid-cols-2 gap-4">
                                 <input 
                                   type="text" 
@@ -520,12 +557,7 @@ const Reservation = () => {
                                   onChange={handleInputChange} 
                                   placeholder="Email (ex: jean@mail.com)" 
                                   className={`w-full bg-white/5 border rounded-xl px-4 py-3 text-white focus:outline-none transition-all
-                                    ${formData.email && !isEmailValid(formData.email) 
-                                      ? 'border-red-500 focus:border-red-500' // Erreur
-                                      : formData.email && isEmailValid(formData.email)
-                                        ? 'border-green-500/50 focus:border-green-500' // Valide
-                                        : 'border-white/10 focus:border-primary' // Neutre
-                                      }`} 
+                                    ${formData.email && !isEmailValid(formData.email) ? 'border-red-500 focus:border-red-500' : formData.email && isEmailValid(formData.email) ? 'border-green-500/50 focus:border-green-500' : 'border-white/10 focus:border-primary'}`} 
                                 />
                                 {formData.email && !isEmailValid(formData.email) && (
                                   <span className="text-[10px] text-red-400 absolute right-3 top-3.5">Format invalide</span>
@@ -540,12 +572,7 @@ const Reservation = () => {
                                   onChange={handleInputChange} 
                                   placeholder="Téléphone (ex: 06 12 34 56 78)" 
                                   className={`w-full bg-white/5 border rounded-xl px-4 py-3 text-white focus:outline-none transition-all
-                                    ${formData.phone && !isPhoneValid(formData.phone) 
-                                      ? 'border-red-500 focus:border-red-500' 
-                                      : formData.phone && isPhoneValid(formData.phone)
-                                        ? 'border-green-500/50 focus:border-green-500'
-                                        : 'border-white/10 focus:border-primary'
-                                      }`} 
+                                    ${formData.phone && !isPhoneValid(formData.phone) ? 'border-red-500 focus:border-red-500' : formData.phone && isPhoneValid(formData.phone) ? 'border-green-500/50 focus:border-green-500' : 'border-white/10 focus:border-primary'}`} 
                                 />
                                 {formData.phone && !isPhoneValid(formData.phone) && (
                                   <span className="text-[10px] text-red-400 absolute right-3 top-3.5">Format invalide</span>
@@ -575,13 +602,13 @@ const Reservation = () => {
                                   <div className="flex-1">
                                     <div className="flex justify-between items-start">
                                       <div>
-                                          <p className="text-xs text-gray-500 uppercase tracking-wider font-bold">Date & Heure</p>
-                                          <p className="text-white font-bold capitalize">{selectedDate ? new Intl.DateTimeFormat('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }).format(selectedDate) : '--'}</p>
-                                          <p className="text-primary text-sm font-medium">à {selectedTime || '--:--'}</p>
+                                        <p className="text-xs text-gray-500 uppercase tracking-wider font-bold">Date & Heure</p>
+                                        <p className="text-white font-bold capitalize">{selectedDate ? new Intl.DateTimeFormat('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }).format(selectedDate) : '--'}</p>
+                                        <p className="text-primary text-sm font-medium">à {selectedTime || '--:--'}</p>
                                       </div>
                                       <div className="text-right">
-                                          <p className="text-xs text-gray-500 uppercase tracking-wider font-bold">Durée Est.</p>
-                                          <p className="text-white font-bold">{formatDuration(totalDuration)}</p>
+                                        <p className="text-xs text-gray-500 uppercase tracking-wider font-bold">Durée Est.</p>
+                                        <p className="text-white font-bold">{formatDuration(totalDuration)}</p>
                                       </div>
                                     </div>
                                   </div>
@@ -596,7 +623,24 @@ const Reservation = () => {
                                 <div className="flex justify-between items-end mt-6 pt-4 border-t border-white/10"><span className="text-gray-400 font-medium">Total estimé</span><span className="text-4xl font-bold text-primary tracking-tight">{isSurDevis ? 'Sur Devis' : calculateTotal() + '€'}</span></div>
                               </div>
                             </div>
-                            <button type="button" onClick={handleSubmit} disabled={!isFormValid} className={`w-full py-4 rounded-xl font-black text-lg transition-all flex items-center justify-center gap-3 mt-6 ${isFormValid ? 'bg-primary text-white shadow-glow hover:scale-[1.02]' : 'bg-white/10 text-gray-500 cursor-not-allowed'}`}>{isFormValid ? <>CONFIRMER <Check className="w-6 h-6" /></> : 'REMPLIR LES CHAMPS'}</button>
+
+                            {/* --- WIDGET CLOUDFLARE TURNSTILE --- */}
+                            <div className="mt-6">
+                                <Turnstile 
+                                    siteKey="0x4AAAAAACWcVeXiRR2a7qKa" 
+                                    onSuccess={(token) => setToken(token)}
+                                    theme="dark"
+                                />
+                            </div>
+
+                            <button 
+                                type="button" 
+                                onClick={handleSubmit} 
+                                disabled={!isFormValid || !token} 
+                                className={`w-full py-4 rounded-xl font-black text-lg transition-all flex items-center justify-center gap-3 mt-4 ${isFormValid && token ? 'bg-primary text-white shadow-glow hover:scale-[1.02]' : 'bg-white/10 text-gray-500 cursor-not-allowed'}`}
+                            >
+                                {isFormValid && token ? <>CONFIRMER <Check className="w-6 h-6" /></> : 'VALIDER LE CAPTCHA'}
+                            </button>
                           </div>
                         </div>
                       </div>

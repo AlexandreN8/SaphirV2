@@ -1,12 +1,20 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, Phone, Mail, Clock, Send, CheckCircle, MessageSquare, ArrowRight } from 'lucide-react';
+import { MapPin, Phone, Mail, Clock, Send, CheckCircle, MessageSquare, ArrowRight, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase'; 
 import { toast } from "sonner"; 
+import { Turnstile } from '@marsidev/react-turnstile'; 
 import SeoHead from '@/components/SeoHead';
 
+// --- CONSTANTES DE VALIDATION  ---
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const phoneRegex = /^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$/;
+
 const Contact = () => {
-  const [formSubmitted, setFormSubmitted] = useState(false);
+  const [formStatus, setFormStatus] = useState<'idle' | 'loading' | 'success'>('idle');
+  const [token, setToken] = useState<string | null>(null);
+  const [honeypot, setHoneypot] = useState(""); 
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -15,32 +23,55 @@ const Contact = () => {
     message: '',
   });
 
+  // --- HELPER FUNCTIONS ---
+  const isEmailValid = (email: string) => emailRegex.test(email);
+  const isPhoneValid = (phone: string) => phoneRegex.test(phone);
+
+  // Validation globale du formulaire
+  const isFormValid = 
+    formData.name.length >= 2 &&
+    isEmailValid(formData.email) &&
+    (formData.phone === '' || isPhoneValid(formData.phone)) &&
+    formData.subject !== '' &&
+    formData.message.length >= 10; 
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const { error } = await supabase
-      .from('contact_messages')
-      .insert([
-        {
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone,
-          subject: formData.subject,
-          message: formData.message,
-        }
-      ]);
+    if (!token) {
+      toast.error("Veuillez valider la sécurité anti-robot.");
+      return;
+    }
+
+    if (!isFormValid) {
+        toast.error("Veuillez vérifier les champs en rouge.");
+        return;
+    }
+
+    setFormStatus('loading');
+
+    const { error } = await supabase.functions.invoke('send-contact', {
+      body: { 
+        ...formData, 
+        token, 
+        confirm_email: honeypot 
+      },
+    });
 
     if (error) {
       console.error("Erreur:", error);
       toast.error("Une erreur est survenue. Veuillez réessayer.");
+      setFormStatus('idle');
       return;
     }
 
-    setFormSubmitted(true);
-    toast.success("Message envoyé ! Nous vous répondrons sous 24h.");
+    setFormStatus('success');
+    toast.success("Message envoyé et sécurisé ! Nous vous répondrons sous 24h.");
     
     setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
-    setTimeout(() => setFormSubmitted(false), 3000);
+    setHoneypot("");
+    
+    setTimeout(() => setFormStatus('idle'), 5000);
   };
 
   const contactDetails = [
@@ -61,15 +92,14 @@ const Contact = () => {
     {
       icon: Mail,
       title: "Email",
-      content: "Saphir.detailing@gmail.com",
+      content: "contact@saphirdetailing.fr",
       action: "Écrire",
-      link: "mailto:Saphir.detailing@gmail.com"
+      link: "mailto:contact@saphirdetailing.fr"
     },
     {
       icon: Clock,
       title: "Horaires",
-      content: `Lundi au Vendredi:
-      9h-12h - 14h-18h`,
+      content: "Lundi au Vendredi:\n9h-12h - 14h-18h",
       link: null
     }
   ];
@@ -82,7 +112,7 @@ const Contact = () => {
       />
       <div className="bg-[#050505] min-h-screen relative overflow-x-hidden">
         
-        {/* --- BACKGROUND VECTORIEL --- */}
+        {/* BACKGROUND */}
         <div className="fixed inset-0 z-0 pointer-events-none">
           <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-primary/10 blur-[100px] rounded-full mix-blend-screen opacity-40" />
           <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-blue-600/5 blur-[100px] rounded-full mix-blend-screen opacity-40" />
@@ -142,7 +172,7 @@ const Contact = () => {
                         <item.icon className="w-5 h-5" />
                       </div>
                       <h3 className="font-display font-bold text-white text-lg mb-1">{item.title}</h3>
-                      <p className="text-sm text-gray-400 mb-4 h-10">{item.content}</p>
+                      <p className="text-sm text-gray-400 mb-4 h-10 whitespace-pre-line">{item.content}</p>
                       
                       {item.link && (
                         <a href={item.link} className="inline-flex items-center text-xs font-bold uppercase tracking-widest text-primary hover:text-white transition-colors">
@@ -155,7 +185,7 @@ const Contact = () => {
 
                 <div className="relative w-full flex-1 min-h-[300px] rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
                   <iframe
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d4858.478509349786!2d1.2249255774551229!3d42.868088371150186!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x12af35449cb79947%3A0x207b6e64a7b5810!2s295%20Rte%20d&#39;Aulus%2C%2009140%20Oust!5e1!3m2!1sfr!2sfr!4v1769881377848!5m2!1sfr!2sfr"
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d4858.478509349786!2d1.2249255774551229!3d42.868088371150186!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x12af35449cb79947%3A0x207b6e64a7b5810!2s295%20Rte%20d'Aulus%2C%2009140%20Oust!5e1!3m2!1sfr!2sfr!4v1769881377848!5m2!1sfr!2sfr"
                     width="100%"
                     height="100%"
                     style={{ border: 0 }} 
@@ -167,7 +197,7 @@ const Contact = () => {
                 </div>
               </motion.div>
 
-              {/* DROITE : FORMULAIRE COCKPIT */}
+              {/* DROITE : FORMULAIRE */}
               <motion.div
                 initial={{ opacity: 0, x: 30 }}
                 whileInView={{ opacity: 1, x: 0 }}
@@ -185,8 +215,22 @@ const Contact = () => {
 
                   <form onSubmit={handleSubmit} className="flex-1 flex flex-col justify-between gap-6">
                     
+                    {/* HONEYPOT */}
+                    <div className="absolute opacity-0 -z-50 select-none pointer-events-none h-0 w-0 overflow-hidden">
+                        <label htmlFor="confirm_email">Ne pas remplir ce champ si vous êtes humain</label>
+                        <input
+                            type="text"
+                            name="confirm_email"
+                            id="confirm_email"
+                            tabIndex={-1}
+                            autoComplete="off"
+                            value={honeypot}
+                            onChange={(e) => setHoneypot(e.target.value)}
+                        />
+                    </div>
+
                     <div className="grid sm:grid-cols-2 gap-5">
-                      <div className="space-y-2">
+                      <div className="space-y-2 relative">
                         <label htmlFor="name" className="text-xs font-bold uppercase tracking-widest text-gray-400 ml-1">
                           Nom complet <span className="text-primary">*</span>
                         </label>
@@ -196,11 +240,19 @@ const Contact = () => {
                           required
                           value={formData.name}
                           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                          className="w-full px-4 py-3 bg-white/[0.07] border border-white/20 rounded-xl focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary text-white placeholder:text-gray-500 transition-all"
                           placeholder="Jean Dupont"
+                          // STYLE DYNAMIQUE
+                          className={`w-full px-4 py-3 bg-white/[0.07] border rounded-xl focus:outline-none transition-all
+                            ${formData.name.length > 0 && formData.name.length < 2 
+                                ? 'border-red-500 focus:border-red-500' 
+                                : formData.name.length >= 2
+                                    ? 'border-green-500/50 focus:border-green-500' 
+                                    : 'border-white/20 focus:border-primary' 
+                            }`}
                         />
                       </div>
-                      <div className="space-y-2">
+
+                      <div className="space-y-2 relative">
                         <label htmlFor="email" className="text-xs font-bold uppercase tracking-widest text-gray-400 ml-1">
                           Email <span className="text-primary">*</span>
                         </label>
@@ -208,32 +260,47 @@ const Contact = () => {
                           type="email"
                           id="email"
                           required
-                          pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
-                          title="Veuillez entrer une adresse email valide (ex: exemple@domaine.fr)"
                           value={formData.email}
                           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                          className="w-full px-4 py-3 bg-white/[0.07] border border-white/20 rounded-xl focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary text-white placeholder:text-gray-500 transition-all"
                           placeholder="jean@exemple.fr"
+                          className={`w-full px-4 py-3 bg-white/[0.07] border rounded-xl focus:outline-none transition-all
+                            ${formData.email && !isEmailValid(formData.email)
+                                ? 'border-red-500 focus:border-red-500' 
+                                : formData.email && isEmailValid(formData.email)
+                                    ? 'border-green-500/50 focus:border-green-500'
+                                    : 'border-white/20 focus:border-primary'
+                            }`}
                         />
+                        {formData.email && !isEmailValid(formData.email) && (
+                           <span className="text-[10px] text-red-400 absolute right-3 top-9">Format invalide</span>
+                        )}
                       </div>
                     </div>
 
                     <div className="grid sm:grid-cols-2 gap-5">
-                      <div className="space-y-2">
+                      <div className="space-y-2 relative">
                         <label htmlFor="phone" className="text-xs font-bold uppercase tracking-widest text-gray-400 ml-1">
                           Téléphone <span className="text-gray-600 lowercase font-normal italic">(Optionnel)</span>
                         </label>
                         <input
                           type="tel"
                           id="phone"
-                          pattern="[0-9+ \-]*"
-                          title="Seuls les chiffres, les espaces, le + et les tirets sont autorisés"
                           value={formData.phone}
                           onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                          className="w-full px-4 py-3 bg-white/[0.07] border border-white/20 rounded-xl focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary text-white placeholder:text-gray-500 transition-all"
                           placeholder="06 12 34 56 78"
+                          className={`w-full px-4 py-3 bg-white/[0.07] border rounded-xl focus:outline-none transition-all
+                            ${formData.phone && !isPhoneValid(formData.phone)
+                                ? 'border-red-500 focus:border-red-500' 
+                                : formData.phone && isPhoneValid(formData.phone)
+                                    ? 'border-green-500/50 focus:border-green-500'
+                                    : 'border-white/20 focus:border-primary'
+                            }`}
                         />
+                        {formData.phone && !isPhoneValid(formData.phone) && (
+                           <span className="text-[10px] text-red-400 absolute right-3 top-9">Format invalide</span>
+                        )}
                       </div>
+
                       <div className="space-y-2">
                         <label htmlFor="subject" className="text-xs font-bold uppercase tracking-widest text-gray-400 ml-1">
                           Sujet <span className="text-primary">*</span>
@@ -243,7 +310,9 @@ const Contact = () => {
                           required
                           value={formData.subject}
                           onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                          className="w-full px-4 py-3 bg-white/[0.07] border border-white/20 rounded-xl focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary text-white transition-all [&>option]:text-black"
+                          className={`w-full px-4 py-3 bg-white/[0.07] border rounded-xl focus:outline-none transition-all [&>option]:text-black
+                            ${formData.subject ? 'border-green-500/50 focus:border-green-500' : 'border-white/20 focus:border-primary'}
+                          `}
                         >
                           <option value="" disabled>Sélectionnez...</option>
                           <option value="devis">Demande de devis</option>
@@ -263,20 +332,43 @@ const Contact = () => {
                         required
                         value={formData.message}
                         onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                        className="w-full h-full p-4 bg-white/[0.07] border border-white/20 rounded-xl focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary text-white placeholder:text-gray-500 transition-all resize-none"
+                        className={`w-full h-full p-4 bg-white/[0.07] border rounded-xl focus:outline-none transition-all resize-none
+                            ${formData.message.length > 0 && formData.message.length < 10
+                                ? 'border-red-500 focus:border-red-500'
+                                : formData.message.length >= 10
+                                    ? 'border-green-500/50 focus:border-green-500'
+                                    : 'border-white/20 focus:border-primary'
+                            }`}
                         placeholder="Décrivez votre projet detailing..."
                       />
                     </div>
 
+                    <div className="w-full flex justify-center ">
+                        <Turnstile 
+                            siteKey="0x4AAAAAACWcVeXiRR2a7qKa" 
+                            onSuccess={(token) => setToken(token)}
+                            theme="dark"
+                        />
+                    </div>
+
                     <button
                       type="submit"
-                      disabled={formSubmitted}
-                      className="w-full py-4 rounded-xl font-bold text-base transition-all flex items-center justify-center gap-2 mt-2 bg-gradient-to-r from-white to-gray-200 text-black hover:scale-[1.02] shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={formStatus === 'loading' || formStatus === 'success' || !token || !isFormValid}
+                      className={`w-full py-4 rounded-xl font-bold text-base transition-all flex items-center justify-center gap-2 mt-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed
+                        ${isFormValid 
+                            ? 'bg-gradient-to-r from-white to-gray-200 text-black hover:scale-[1.02]' 
+                            : 'bg-white/10 text-gray-500'
+                        }`}
                     >
-                      {formSubmitted ? (
+                      {formStatus === 'success' ? (
                         <>
                           <CheckCircle className="w-5 h-5 text-green-600" />
                           <span>Message envoyé avec succès</span>
+                        </>
+                      ) : formStatus === 'loading' ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          <span>Envoi sécurisé...</span>
                         </>
                       ) : (
                         <>

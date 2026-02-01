@@ -67,7 +67,7 @@ const Index = () => {
           >
             <img
               src={heroDetailing}
-              alt="Luxury car in detailing studio"
+              alt="Voiture de luxe un detailing automobile professionnel"
               className="w-full h-full object-cover"
             />
           </motion.div>

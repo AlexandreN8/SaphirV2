@@ -3,4 +3,4 @@ Allow: /
 Disallow: /admin/
 Disallow: /dashboard/
 
-Sitemap: https://ton-site-internet.com/sitemap.xml 
+Sitemap: https://saphirdetailing.fr/sitemap.xml 
