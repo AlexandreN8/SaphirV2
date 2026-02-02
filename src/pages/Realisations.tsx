@@ -91,7 +91,7 @@ const galleryImages = [
 ];
 
 // --- COMPONENT SLIDER ---
-const BeforeAfterSlider = ({ before, after, alt }: { before: string; after: string; alt: string }) => {
+const BeforeAfterSlider = ({ before, after, alt, isPriority = false }: { before: string; after: string; alt: string; isPriority?: boolean }) => {
   const [sliderPosition, setSliderPosition] = useState(50);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -112,16 +112,28 @@ const BeforeAfterSlider = ({ before, after, alt }: { before: string; after: stri
         onTouchMove={(e) => handleMove(e.touches[0].clientX, e.currentTarget.getBoundingClientRect())}
         onClick={(e) => handleMove(e.clientX, e.currentTarget.getBoundingClientRect())}
       />
-      <img src={after} alt={`Après - ${alt}`} className="absolute inset-0 w-full h-full object-cover" />
+      
+      {/* IMAGE APRÈS  */}
+      <img 
+        src={after} 
+        alt={`Après - ${alt}`} 
+        className="absolute inset-0 w-full h-full object-cover"
+        loading={isPriority ? "eager" : "lazy"}
+        fetchPriority={isPriority ? "high" : "auto"}
+      />
+
       <div
         className="absolute inset-0 overflow-hidden border-r-2 border-primary/50"
         style={{ width: `${sliderPosition}%` }}
       >
+        {/* IMAGE AVANT */}
         <img
           src={before}
           alt={`Avant - ${alt}`}
           className="absolute inset-0 w-full h-full object-cover"
           style={{ minWidth: `${100 / (sliderPosition / 100)}%` }}
+          loading={isPriority ? "eager" : "lazy"}
+          fetchPriority={isPriority ? "high" : "auto"}
         />
         <div className="absolute top-0 right-0 bottom-0 w-20 bg-gradient-to-l from-black/50 to-transparent pointer-events-none" />
       </div>
@@ -204,7 +216,7 @@ const Realisations = () => {
             </div>
 
             <div className="space-y-24">
-              {comparisons.map((comparison) => (
+              {comparisons.map((comparison, index) => (
                 <motion.div
                   key={comparison.id}
                   initial={{ opacity: 0, y: 40 }}
@@ -225,7 +237,12 @@ const Realisations = () => {
                       <p className="text-gray-400">{comparison.description}</p>
                     </div>
                   </div>
-                  <BeforeAfterSlider before={comparison.before} after={comparison.after} alt={comparison.alt} />
+                  <BeforeAfterSlider 
+                    before={comparison.before} 
+                    after={comparison.after} 
+                    alt={comparison.alt}
+                    isPriority={index === 0}
+                  />
                 </motion.div>
               ))}
             </div>
@@ -255,12 +272,15 @@ const Realisations = () => {
                     <img
                       src={image.after}
                       alt={`${image.title} - Après Detailing`}
+                      loading={index < 2 ? "eager" : "lazy"}
+                      fetchPriority={index < 2 ? "high" : "auto"}
                       className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                     />
                     <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-in-out">
                       <img
                         src={image.before}
                         alt={`${image.title} - Avant Detailing`}
+                        loading="lazy"
                         className="w-full h-full object-cover"
                       />
                       <div className="absolute inset-0 bg-black/40" />

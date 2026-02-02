@@ -8,53 +8,79 @@ import { Turnstile } from '@marsidev/react-turnstile';
 import { 
   CarFront, Truck, Car, ChevronRight, ChevronLeft, Calendar as CalendarIcon, 
   Check, Sparkles, Shield, Droplet, Wrench, Disc, Settings, User, 
-  ArrowRight, Clock
+  ArrowRight, Clock, Info, Zap, Wind, Filter, Activity, Search, Battery
 } from 'lucide-react';
 
 // --- DONNÉES ---
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const phoneRegex = /^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$/;
 
+// 1. VÉHICULES
 const vehicleTypes = [
   { id: 'citadine', name: 'Citadine / Compacte', description: '2 à 4 places (ex: Clio, 208, Golf)', icon: CarFront },
   { id: 'berline', name: 'Berline / Break', description: '4 à 5 places (ex: Serie 3, Passat, A4)', icon: Car },
-  { id: 'suv', name: 'SUV / Monospace', description: '7 places / Grand volume (ex: X5, Q7)', icon: Truck },
+  { id: 'suv', name: 'SUV / Monospace', description: '7 places / Grand volume (ex: X5, Q7)', icon: Car },
+  { id: 'utilitaire', name: 'Utilitaire / Van', description: 'Gros volumes (ex: Trafic, Vito, V-Class)', icon: Truck },
 ];
 
+// 2. MATRICE DE PRIX
 const pricingMatrix: { [key: string]: { [key: string]: number } } = {
-  'entretien': { citadine: 120, berline: 140, suv: 220 },
-  'sale': { citadine: 140, berline: 160, suv: 0 },
-  'tres_sale': { citadine: 180, berline: 220, suv: 0 },
-  'polissage_1': { citadine: 280, berline: 330, suv: 380 },
-  'polissage_2': { citadine: 450, berline: 520, suv: 600 },
-  'ceramique_gyeon': { citadine: 450, berline: 750, suv: 850 },
+  'interieur_entretenu': { citadine: 120, berline: 140, suv: 150, utilitaire: 220 },
+  'interieur_sale': { citadine: 150, berline: 170, suv: 180, utilitaire: 0 }, 
+  'interieur_tres_sale': { citadine: 190, berline: 210, suv: 220, utilitaire: 0 },
+  'polissage_1': { citadine: 280, berline: 330, suv: 380, utilitaire: 0 },
+  'polissage_2': { citadine: 450, berline: 520, suv: 600, utilitaire: 0 },
+  'ceramique_pack': { citadine: 650, berline: 750, suv: 850, utilitaire: 0 },
 };
 
+// 3. PACKS ET DURÉES
 const detailingPacks = [
-  { id: 'entretien', name: 'Formule Entretien', category: 'Intérieur', durationHours: 2.5, icon: Droplet, features: ['Aspiration habitacle', 'Dépoussiérage tableau de bord', 'Vitres intérieures'] },
-  { id: 'sale', name: 'Formule Sale', category: 'Intérieur', durationHours: 4, icon: Sparkles, features: ['Formule Entretien +', 'Shampoing sièges/moquettes', 'Nettoyage plastiques', 'Odeurs léger'], popular: true },
-  { id: 'tres_sale', name: 'Formule Très Sale', category: 'Intérieur', durationHours: 6, icon: Shield, features: ['Formule Sale +', 'Extraction injecteur', 'Poils animaux', 'Désinfection'] },
-  { id: 'polissage_1', name: 'Polissage 1 Étape', category: 'Extérieur', durationHours: 8, icon: Sparkles, features: ['Correction légère', 'Brillance complète'] },
-  { id: 'polissage_2', name: 'Polissage 2 Étapes', category: 'Extérieur', durationHours: 16, icon: Disc, features: ['Correction avancée', 'Suppression micro-rayures'] },
-  { id: 'ceramique_gyeon', name: 'Céramique GYEON', category: 'Protection', durationHours: 24, icon: Shield, features: ['Protection 6-12 mois', 'Anti-UV & Pluies acides'] },
+  { id: 'interieur_entretenu', name: 'Intérieur Entretenu', category: 'Intérieur', durationHours: 4.5, icon: Droplet, features: ['Aspiration complète habitacle', 'Dépoussiérage plastiques', 'Nettoyage vitres', 'Coffre standard', 'Finitions'] },
+  { id: 'interieur_sale', name: 'Intérieur Sale', category: 'Intérieur', durationHours: 5, icon: Sparkles, features: ['Formule Entretenu +', 'Détails plastiques profond', 'Aspiration minutieuse', 'Shampoing tapis léger'], popular: true },
+  { id: 'interieur_tres_sale', name: 'Très Sale / Insalubre', category: 'Intérieur', durationHours: 7, icon: Shield, features: ['Formule Sale +', 'Gros dégraissage', 'Extraction moquettes', 'Recoin rails sièges', 'Coffre XXL'] },
+  
+  { id: 'polissage_1', name: 'Polissage 1 Étape', category: 'Extérieur', durationHours: 7, icon: Sparkles, features: ['Lavage minutieux', 'Décontamination chimique/mécanique','Brillance (Gloss)', 'Protéction cire rapide'] },
+  { id: 'polissage_2', name: 'Polissage 2 Étapes', category: 'Extérieur', durationHours: 10.5, icon: Disc, features: ['Correction avancée', 'Suppression micro-rayures', 'Finition miroir', 'Finitions manuelles'] },
+  { id: 'ceramique_pack', name: 'Pack Céramique', category: 'Protection', durationHours: 21, icon: Shield, features: ['Polissage complet inclus', 'Céramique GYEON', 'Protection UV & Acide', 'Hydrophobie extrême', 'Facilité de lavage'] },
 ];
 
+// 4. OPTIONS
 const detailingOptions = [
-  { id: 'lessivage', name: 'Lessivage Sièges', basePrice: 15, icon: Droplet, desc: 'Extraction injecteur', durationHours: 1 },
-  { id: 'poils', name: 'Poils Animaux', basePrice: 30, icon: Settings, desc: 'Supplément si excessif', durationHours: 1 },
-  { id: 'desinfection', name: 'Désinfection / Odeurs', basePrice: 49, icon: Sparkles, desc: 'Traitement vapeur/ozone', durationHours: 0.5 },
+  { id: 'lessivage', name: 'Lessivage Sièges', basePrice: 60, icon: Droplet, desc: 'Injecteur / Extracteur', durationHours: 1.5 },
+  { id: 'shampoing_moquette', name: 'Shampoing Moquettes', basePrice: 50, icon: Droplet, desc: 'Injecteur / Extracteur', durationHours: 1 },
+  { id: 'Taches', name: 'Sièges très Tachés', basePrice: 80, icon: Settings, desc: 'Traitement spécifique', durationHours: 1.5 },
+  { id: 'desinfection', name: 'Désinfection / Odeurs', basePrice: 30, icon: Sparkles, desc: 'Traitement habitacle', durationHours: 0.5 },
 ];
 
+// 5. MECA
 const mechanicOptions = [
-  { id: 'vidange', name: 'Vidange + Filtre', basePrice: 79, icon: Droplet, desc: 'Huile constructeur', durationHours: 1 },
-  { id: 'freinage', name: 'Freinage (Plaquettes)', basePrice: 89, icon: Disc, desc: 'Jeu avant ou arrière', durationHours: 1 },
-  { id: 'diag', name: 'Diagnostic Élec.', basePrice: 49, icon: Wrench, desc: 'Lecture codes défauts', durationHours: 0.5 },
+  { id: 'vidange', name: 'Vidange + Filtre', basePrice: 50, icon: Droplet, desc: 'Main d\'oeuvre seule', durationHours: 1 },
+  { id: 'Filtre à air', name: 'Filtre à air', basePrice: 12.5, icon: Wind, desc: 'Pose (0h15)', durationHours: 0.25 },
+  { id: 'Filtre habitacle', name: 'Filtre habitacle', basePrice: 15, icon: Wind, desc: 'Pose (0h20)', durationHours: 0.33 },
+  { id: 'Filtre carburant', name: 'Filtre carburant', basePrice: 25, icon: Filter, desc: 'Pose (0h45)', durationHours: 0.75 },
+  { id: 'bougies', name: 'Bougies d\'allumage', basePrice: 25, icon: Zap, desc: 'Pose (0h45)', durationHours: 0.75 },
+  
+  { id: 'freinage', name: 'Freinage (Plaquettes)', basePrice: 50, icon: Disc, desc: 'Pose (1h)', durationHours: 1 },
+  { id: 'Nettoyage Etriers', name: 'Nettoyage Etriers', basePrice: 65.5, icon: Sparkles, desc: 'Main d\'oeuvre (1h15)', durationHours: 1.25 },
+  { id: 'disques_plaquettes', name: 'Disques + Plaquettes', basePrice: 75, icon: Disc, desc: 'Pose (1h30)', durationHours: 1.5 },
+  { id: 'quatre_roues', name: '4 Roues (Disques+Plaq)', basePrice: 125, icon: Disc, desc: 'Pose (2h30-3h)', durationHours: 2.75 },
+  { id: 'purge_frein', name: 'Purge liquide frein', basePrice: 40, icon: Droplet, desc: 'Main d\'oeuvre (0h45-1h)', durationHours: 0.75 },
+  
+  { id: 'Amortisseur', name: 'Amortisseur (l\'unité)', basePrice: 50, icon: Activity, desc: 'Main d\'oeuvre (1h)', durationHours: 1 },
+  { id: 'Train_avant', name: 'Train avant complet', basePrice: 100, icon: Settings, desc: 'Main d\'oeuvre (2h30)', durationHours: 2.5 },
+  { id: 'Train_arriere', name: 'Train arrière complet', basePrice: 75, icon: Settings, desc: 'Main d\'oeuvre (1h30)', durationHours: 1.5 },
+  { id: 'Bielettes', name: 'Bielettes barre stab', basePrice: 50, icon: Activity, desc: 'Main d\'oeuvre (1h)', durationHours: 1 },
+  
+  { id: 'diag', name: 'Diagnostic Valise', basePrice: 25, icon: Activity, desc: 'Lecture codes défauts', durationHours: 0.5 },
+  { id: 'Recherche', name: 'Recherche panne simple', basePrice: 50, icon: Search, desc: 'Forfait 1h', durationHours: 1 },
+  { id: 'Batterie', name: 'Changement Batterie', basePrice: 25, icon: Battery, desc: 'Pose (0h30)', durationHours: 0.5 },
+  { id: 'Alternateur', name: 'Alternateur/Démarreur', basePrice: 15, icon: Zap, desc: 'Pose (2h)', durationHours: 2 },
 ];
 
 const Reservation = () => {
   const [step, setStep] = useState(1);
   const [selectedVehicle, setSelectedVehicle] = useState<string | null>(null);
-  const [selectedPack, setSelectedPack] = useState<string | null>('sale');
+  const [selectedPack, setSelectedPack] = useState<string | null>('interieur_sale');
   const [selectedDetailingOptions, setSelectedDetailingOptions] = useState<string[]>([]);
   const [selectedMechanicOptions, setSelectedMechanicOptions] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -71,6 +97,11 @@ const Reservation = () => {
   const totalSteps = 4;
   const isEmailValid = (email: string) => emailRegex.test(email);
   const isPhoneValid = (phone: string) => phoneRegex.test(phone);
+
+  // --- SCROLL AUTOMATIQUE ---
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [step]);
 
   // --- LOGIQUE METIER ---
   const getPackPrice = (packId: string, vehicleId: string | null) => {
@@ -96,14 +127,20 @@ const Reservation = () => {
     let h = detailingPacks.find(p => p.id === selectedPack)?.durationHours || 2;
     selectedDetailingOptions.forEach(id => h += detailingOptions.find(o => o.id === id)?.durationHours || 0);
     selectedMechanicOptions.forEach(id => h += mechanicOptions.find(o => o.id === id)?.durationHours || 0);
+    
     if (selectedVehicle === 'suv') h *= 1.2;
+    if (selectedVehicle === 'utilitaire') h *= 1.5; 
+    
     return Math.round(h * 2) / 2;
   }, [selectedPack, selectedDetailingOptions, selectedMechanicOptions, selectedVehicle]);
 
   const formatDuration = (hours: number) => {
     const h = Math.floor(hours);
     const m = Math.round((hours - h) * 60);
-    if (h > 10) return `${Math.ceil(h/8)} jours`; 
+    if (h > 8) {
+       const days = Math.ceil(h / 8); 
+       return `${days} jour${days > 1 ? 's' : ''}`; 
+    }
     return `${h}h${m > 0 ? m : ''}`;
   };
 
@@ -202,16 +239,14 @@ const Reservation = () => {
   };
 
   const handleSubmit = async () => {
-    // 1. SECURITÉ CLIENT : Token Turnstile requis
     if (!token) {
         toast.error("Veuillez valider la sécurité anti-robot.");
         return;
     }
 
-    // 2. SECURITÉ HONEYPOT : Si rempli, on simule un succès (Bot)
     if (honeypot) {
         console.log("Honeypot triggered");
-        setIsSuccess(true); // Fake success
+        setIsSuccess(true);
         return;
     }
 
@@ -221,7 +256,6 @@ const Reservation = () => {
     startDate.setHours(h, m, 0, 0);
     const endDate = calculateEndDate(startDate, totalDuration);
 
-    // 3. ENREGISTREMENT DB 
     const { data, error } = await supabase.rpc('reserve_multi_day', {
       p_client_name: `${formData.firstName} ${formData.lastName}`,
       p_client_email: formData.email,
@@ -241,7 +275,6 @@ const Reservation = () => {
       if (newData) setMonthReservations(newData);
     } else {
       
-      // 4. ENVOI EMAILS (via Edge Function)
       const reservationData = {
         client_name: `${formData.firstName} ${formData.lastName}`,
         client_email: formData.email,
@@ -390,7 +423,10 @@ const Reservation = () => {
                                       <div className="flex-1 pt-1">
                                         <div className="flex justify-between items-start">
                                           <div><h4 className={`text-lg font-bold transition-colors ${isSelected ? 'text-white' : 'text-gray-300'}`}>{pack.name}</h4>{!isSelected && <p className="text-sm text-muted-foreground mt-1">{pack.features.slice(0, 2).join(' • ')}...</p>}</div>
-                                          <div className="text-right"><span className={`block text-lg font-bold transition-colors ${isSelected ? 'text-primary' : 'text-white'}`}>{price === 0 ? 'Sur Devis' : `${price}€`}</span></div>
+                                          <div className="text-right">
+                                            <span className={`block text-lg font-bold transition-colors ${isSelected ? 'text-primary' : 'text-white'}`}>{price === 0 ? 'Sur Devis' : `${price}€`}</span>
+                                            {price > 0 && <span className="text-[10px] text-gray-500 uppercase tracking-wide">Dès</span>}
+                                          </div>
                                         </div>
                                         <AnimatePresence>
                                           {isSelected && (
@@ -514,9 +550,15 @@ const Reservation = () => {
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
                         <div className="flex flex-col">
                           <div className="bg-[#0f0f0f] border border-white/10 rounded-3xl p-6 md:p-8 h-full">
-                            <div className="flex items-center gap-3 mb-6"><div className="p-2 bg-primary/20 rounded-lg text-primary"><User className="w-5 h-5" /></div><h3 className="text-xl font-bold text-white">Vos Coordonnées</h3></div>
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-primary/20 rounded-lg text-primary"><User className="w-5 h-5" /></div>
+                                    <h3 className="text-xl font-bold text-white">Vos Coordonnées</h3>
+                                </div>
+                                <span className="text-xs text-gray-500 font-medium">* Champs obligatoires</span>
+                            </div>
                             
-                            <div className="space-y-4 relative">
+                            <div className="space-y-6 relative">
                               {/* --- HONEYPOT FIELD --- */}
                               <div className="absolute opacity-0 -z-50 select-none pointer-events-none h-0 w-0 overflow-hidden">
                                 <label htmlFor="confirm_email_res">Ne pas remplir</label>
@@ -532,62 +574,73 @@ const Reservation = () => {
                               </div>
 
                               <div className="grid grid-cols-2 gap-4">
-                                <input 
-                                  type="text" 
-                                  name="firstName" 
-                                  value={formData.firstName} 
-                                  onChange={handleInputChange} 
-                                  placeholder="Prénom" 
-                                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-primary outline-none" 
-                                />
-                                <input 
-                                  type="text" 
-                                  name="lastName" 
-                                  value={formData.lastName} 
-                                  onChange={handleInputChange} 
-                                  placeholder="Nom" 
-                                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-primary outline-none" 
-                                />
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Prénom <span className="text-primary">*</span></label>
+                                    <input 
+                                      type="text" 
+                                      name="firstName" 
+                                      value={formData.firstName} 
+                                      onChange={handleInputChange} 
+                                      placeholder="Jean" 
+                                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-primary outline-none transition-all placeholder:text-gray-600" 
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Nom <span className="text-primary">*</span></label>
+                                    <input 
+                                      type="text" 
+                                      name="lastName" 
+                                      value={formData.lastName} 
+                                      onChange={handleInputChange} 
+                                      placeholder="Dupont" 
+                                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-primary outline-none transition-all placeholder:text-gray-600" 
+                                    />
+                                </div>
                               </div>
                               
-                              <div className="relative">
+                              <div className="space-y-1.5 relative">
+                                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Email <span className="text-primary">*</span></label>
                                 <input 
                                   type="email" 
                                   name="email" 
                                   value={formData.email} 
                                   onChange={handleInputChange} 
-                                  placeholder="Email (ex: jean@mail.com)" 
-                                  className={`w-full bg-white/5 border rounded-xl px-4 py-3 text-white focus:outline-none transition-all
+                                  placeholder="jean.dupont@email.com" 
+                                  className={`w-full bg-white/5 border rounded-xl px-4 py-3 text-white focus:outline-none transition-all placeholder:text-gray-600
                                     ${formData.email && !isEmailValid(formData.email) ? 'border-red-500 focus:border-red-500' : formData.email && isEmailValid(formData.email) ? 'border-green-500/50 focus:border-green-500' : 'border-white/10 focus:border-primary'}`} 
                                 />
                                 {formData.email && !isEmailValid(formData.email) && (
-                                  <span className="text-[10px] text-red-400 absolute right-3 top-3.5">Format invalide</span>
+                                  <span className="text-[10px] text-red-400 absolute right-3 top-9">Format invalide</span>
                                 )}
                               </div>
 
-                              <div className="relative">
+                              <div className="space-y-1.5 relative">
+                                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Téléphone <span className="text-primary">*</span></label>
                                 <input 
                                   type="tel" 
                                   name="phone" 
                                   value={formData.phone} 
                                   onChange={handleInputChange} 
-                                  placeholder="Téléphone (ex: 06 12 34 56 78)" 
-                                  className={`w-full bg-white/5 border rounded-xl px-4 py-3 text-white focus:outline-none transition-all
+                                  placeholder="06 12 34 56 78" 
+                                  className={`w-full bg-white/5 border rounded-xl px-4 py-3 text-white focus:outline-none transition-all placeholder:text-gray-600
                                     ${formData.phone && !isPhoneValid(formData.phone) ? 'border-red-500 focus:border-red-500' : formData.phone && isPhoneValid(formData.phone) ? 'border-green-500/50 focus:border-green-500' : 'border-white/10 focus:border-primary'}`} 
                                 />
                                 {formData.phone && !isPhoneValid(formData.phone) && (
-                                  <span className="text-[10px] text-red-400 absolute right-3 top-3.5">Format invalide</span>
+                                  <span className="text-[10px] text-red-400 absolute right-3 top-9">Format invalide</span>
                                 )}
                               </div>
 
-                              <textarea 
-                                name="notes" 
-                                value={formData.notes} 
-                                onChange={handleInputChange} 
-                                placeholder="Demande particulière..." 
-                                rows={3} 
-                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-primary outline-none resize-none" 
-                              />
+                              <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Message (Optionnel)</label>
+                                <textarea 
+                                  name="notes" 
+                                  value={formData.notes} 
+                                  onChange={handleInputChange} 
+                                  placeholder="Précisions sur l'état du véhicule, code d'accès..." 
+                                  rows={3} 
+                                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-primary outline-none resize-none placeholder:text-gray-600" 
+                                />
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -617,11 +670,20 @@ const Reservation = () => {
 
                                 <div className="border-t border-white/10 border-dashed my-2" />
                                 <div className="space-y-2">
-                                  <div className="flex justify-between items-start text-white font-bold"><span>{detailingPacks.find(p => p.id === selectedPack)?.name}</span><span>{isSurDevis ? 'Sur Devis' : getPackPrice(selectedPack!, selectedVehicle) + '€'}</span></div>
+                                  <div className="flex justify-between items-start text-white font-bold">
+                                    <span>{detailingPacks.find(p => p.id === selectedPack)?.name}</span>
+                                    <span>{isSurDevis ? 'Sur Devis' : getPackPrice(selectedPack!, selectedVehicle) + '€'}</span>
+                                  </div>
                                   {selectedDetailingOptions.map(id => <div key={id} className="flex justify-between text-sm text-gray-400"><span>+ {detailingOptions.find(o => o.id === id)?.name}</span><span>{detailingOptions.find(o => o.id === id)?.basePrice}€</span></div>)}
                                   {selectedMechanicOptions.map(id => <div key={id} className="flex justify-between text-sm text-gray-400"><span>+ {mechanicOptions.find(o => o.id === id)?.name}</span><span>{mechanicOptions.find(o => o.id === id)?.basePrice}€</span></div>)}
                                 </div>
-                                <div className="flex justify-between items-end mt-6 pt-4 border-t border-white/10"><span className="text-gray-400 font-medium">Total estimé</span><span className="text-4xl font-bold text-primary tracking-tight">{isSurDevis ? 'Sur Devis' : calculateTotal() + '€'}</span></div>
+                                <div className="flex justify-between items-end mt-6 pt-4 border-t border-white/10">
+                                    <div>
+                                        <span className="text-gray-400 font-medium block">Total estimé</span>
+                                        <span className="text-[10px] text-gray-500">* Prix minimum indicatif</span>
+                                    </div>
+                                    <span className="text-4xl font-bold text-primary tracking-tight">{isSurDevis ? 'Sur Devis' : calculateTotal() + '€'}</span>
+                                </div>
                               </div>
                             </div>
 
