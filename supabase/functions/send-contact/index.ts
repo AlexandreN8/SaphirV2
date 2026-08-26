@@ -8,16 +8,16 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
 // --- CONFIGURATION EMAILS ---
 const SENDER_EMAIL = "Saphir Detailing <contact@saphirdetailing.fr>";
-const ADMIN_EMAIL = "contact@saphirdetailing.fr"; 
+const ADMIN_EMAIL = "contact@saphirdetailing.fr";
 
 const LOGO_URL = "https://rfmebohbwdwjjktlaniq.supabase.co/storage/v1/object/public/public-bucket/logo.png";
 
 // --- GESTION CORS SÉCURISÉE ---
 const allowedOrigins = [
-  "http://localhost:5173",            
-  "http://127.0.0.1:5173",         
-  "https://saphirdetailing.fr",     
-  "https://www.saphirdetailing.fr"   
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "https://saphirdetailing.fr",
+  "https://www.saphirdetailing.fr"
 ];
 
 const getCorsHeaders = (origin: string) => {
@@ -111,6 +111,7 @@ serve(async (req: Request) => {
     const turnstileOutcome = await turnstileVerify.json();
 
     if (!turnstileOutcome.success) {
+      console.error("Échec vérification Turnstile:", turnstileOutcome);
       return new Response(JSON.stringify({ error: "Échec de la vérification de sécurité." }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" }
       });
@@ -142,13 +143,13 @@ serve(async (req: Request) => {
     if (dbError) throw dbError;
 
     // 5. ENVOI EMAILS
-    
+
     // A. Email ADMIN
-    const emailAdmin = fetch("https://api.resend.com/emails", {
-      method: "POST", 
-      headers: { 
-        "Authorization": `Bearer ${RESEND_API_KEY}`, 
-        "Content-Type": "application/json" 
+    const emailAdminPromise = fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
         from: SENDER_EMAIL,
@@ -167,11 +168,11 @@ serve(async (req: Request) => {
     });
 
     // B. Email CLIENT
-    const emailClient = fetch("https://api.resend.com/emails", {
-      method: "POST", 
-      headers: { 
-        "Authorization": `Bearer ${RESEND_API_KEY}`, 
-        "Content-Type": "application/json" 
+    const emailClientPromise = fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
         from: SENDER_EMAIL,
@@ -186,7 +187,27 @@ serve(async (req: Request) => {
       }),
     });
 
-    await Promise.all([emailAdmin, emailClient]);
+    const [adminRes, clientRes] = await Promise.all([emailAdminPromise, emailClientPromise]);
+
+    const [adminBody, clientBody] = await Promise.all([
+      adminRes.json().catch(() => null),
+      clientRes.json().catch(() => null),
+    ]);
+
+    if (!adminRes.ok) {
+      console.error("Échec envoi email ADMIN (Resend):", adminRes.status, adminBody);
+    }
+    if (!clientRes.ok) {
+      console.error("Échec envoi email CLIENT (Resend):", clientRes.status, clientBody);
+    }
+    if (!adminRes.ok) {
+      return new Response(JSON.stringify({
+        error: "L'email de notification n'a pas pu être envoyé.",
+        details: adminBody,
+      }), {
+        status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -194,6 +215,7 @@ serve(async (req: Request) => {
     });
 
   } catch (error) {
+    console.error("Erreur inattendue dans send-contact:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
