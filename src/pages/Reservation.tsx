@@ -5,15 +5,17 @@ import { toast } from 'sonner';
 import SeoHead from '@/components/SeoHead';
 import { Turnstile } from '@marsidev/react-turnstile';
 
-import { 
-  CarFront, Truck, Car, ChevronRight, ChevronLeft, Calendar as CalendarIcon, 
-  Check, Sparkles, Shield, Droplet, Wrench, Disc, Settings, User, 
-  ArrowRight, Clock, Info, Zap, Wind, Filter, Activity, Search, Battery
+import {
+  CarFront, Truck, Car, ChevronRight, ChevronLeft, Calendar as CalendarIcon,
+  Check, Sparkles, Shield, Droplet, Wrench, Disc, Settings, User,
+  ArrowRight, Zap, Wind, Filter, Activity, Search, Battery, Phone
 } from 'lucide-react';
 
 // --- DONNÉES ---
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const phoneRegex = /^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$/;
+const PHONE_NUMBER = "06 68 84 06 27";
+const PHONE_HREF = "tel:+33668840627";
 
 // 1. VÉHICULES
 const vehicleTypes = [
@@ -26,55 +28,55 @@ const vehicleTypes = [
 // 2. MATRICE DE PRIX
 const pricingMatrix: { [key: string]: { [key: string]: number } } = {
   'interieur_entretenu': { citadine: 120, berline: 140, suv: 150, utilitaire: 220 },
-  'interieur_sale': { citadine: 150, berline: 170, suv: 180, utilitaire: 0 }, 
+  'interieur_sale': { citadine: 150, berline: 170, suv: 180, utilitaire: 0 },
   'interieur_tres_sale': { citadine: 190, berline: 210, suv: 220, utilitaire: 0 },
   'polissage_1': { citadine: 280, berline: 330, suv: 380, utilitaire: 0 },
   'polissage_2': { citadine: 450, berline: 520, suv: 600, utilitaire: 0 },
   'ceramique_pack': { citadine: 650, berline: 750, suv: 850, utilitaire: 0 },
 };
 
-// 3. PACKS ET DURÉES
+// 3. PACKS
 const detailingPacks = [
-  { id: 'interieur_entretenu', name: 'Intérieur Entretenu', category: 'Intérieur', durationHours: 4.5, icon: Droplet, features: ['Aspiration complète habitacle', 'Dépoussiérage plastiques', 'Nettoyage vitres', 'Coffre standard', 'Finitions'] },
-  { id: 'interieur_sale', name: 'Intérieur Sale', category: 'Intérieur', durationHours: 5, icon: Sparkles, features: ['Formule Entretenu +', 'Détails plastiques profond', 'Aspiration minutieuse', 'Shampoing tapis léger'], popular: true },
-  { id: 'interieur_tres_sale', name: 'Très Sale / Insalubre', category: 'Intérieur', durationHours: 7, icon: Shield, features: ['Formule Sale +', 'Gros dégraissage', 'Extraction moquettes', 'Recoin rails sièges', 'Coffre XXL'] },
-  
-  { id: 'polissage_1', name: 'Polissage 1 Étape', category: 'Extérieur', durationHours: 7, icon: Sparkles, features: ['Lavage minutieux', 'Décontamination chimique/mécanique','Brillance (Gloss)', 'Protéction cire rapide'] },
-  { id: 'polissage_2', name: 'Polissage 2 Étapes', category: 'Extérieur', durationHours: 10.5, icon: Disc, features: ['Correction avancée', 'Suppression micro-rayures', 'Finition miroir', 'Finitions manuelles'] },
-  { id: 'ceramique_pack', name: 'Pack Céramique', category: 'Protection', durationHours: 21, icon: Shield, features: ['Polissage complet inclus', 'Céramique GYEON', 'Protection UV & Acide', 'Hydrophobie extrême', 'Facilité de lavage'] },
+  { id: 'interieur_entretenu', name: 'Intérieur Entretenu', category: 'Intérieur', icon: Droplet, features: ['Aspiration complète habitacle', 'Dépoussiérage plastiques', 'Nettoyage vitres', 'Coffre standard', 'Finitions'] },
+  { id: 'interieur_sale', name: 'Intérieur Sale', category: 'Intérieur', icon: Sparkles, features: ['Formule Entretenu +', 'Détails plastiques profond', 'Aspiration minutieuse', 'Shampoing tapis léger'], popular: true },
+  { id: 'interieur_tres_sale', name: 'Très Sale / Insalubre', category: 'Intérieur', icon: Shield, features: ['Formule Sale +', 'Gros dégraissage', 'Extraction moquettes', 'Recoin rails sièges', 'Coffre XXL'] },
+
+  { id: 'polissage_1', name: 'Polissage 1 Étape', category: 'Extérieur', icon: Sparkles, features: ['Lavage minutieux', 'Décontamination chimique/mécanique', 'Brillance (Gloss)', 'Protéction cire rapide'] },
+  { id: 'polissage_2', name: 'Polissage 2 Étapes', category: 'Extérieur', icon: Disc, features: ['Correction avancée', 'Suppression micro-rayures', 'Finition miroir', 'Finitions manuelles'] },
+  { id: 'ceramique_pack', name: 'Pack Céramique', category: 'Protection', icon: Shield, features: ['Polissage complet inclus', 'Céramique GYEON', 'Protection UV & Acide', 'Hydrophobie extrême', 'Facilité de lavage'] },
 ];
 
 // 4. OPTIONS
 const detailingOptions = [
-  { id: 'lessivage', name: 'Lessivage Sièges', basePrice: 60, icon: Droplet, desc: 'Injecteur / Extracteur', durationHours: 1.5 },
-  { id: 'shampoing_moquette', name: 'Shampoing Moquettes', basePrice: 50, icon: Droplet, desc: 'Injecteur / Extracteur', durationHours: 1 },
-  { id: 'Taches', name: 'Sièges très Tachés', basePrice: 80, icon: Settings, desc: 'Traitement spécifique', durationHours: 1.5 },
-  { id: 'desinfection', name: 'Désinfection / Odeurs', basePrice: 30, icon: Sparkles, desc: 'Traitement habitacle', durationHours: 0.5 },
+  { id: 'lessivage', name: 'Lessivage Sièges', basePrice: 60, icon: Droplet, desc: 'Injecteur / Extracteur' },
+  { id: 'shampoing_moquette', name: 'Shampoing Moquettes', basePrice: 50, icon: Droplet, desc: 'Injecteur / Extracteur' },
+  { id: 'Taches', name: 'Sièges très Tachés', basePrice: 80, icon: Settings, desc: 'Traitement spécifique' },
+  { id: 'desinfection', name: 'Désinfection / Odeurs', basePrice: 30, icon: Sparkles, desc: 'Traitement habitacle' },
 ];
 
 // 5. MECA
 const mechanicOptions = [
-  { id: 'vidange', name: 'Vidange + Filtre', basePrice: 50, icon: Droplet, desc: 'Main d\'oeuvre seule', durationHours: 1 },
-  { id: 'Filtre à air', name: 'Filtre à air', basePrice: 12.5, icon: Wind, desc: 'Pose (0h15)', durationHours: 0.25 },
-  { id: 'Filtre habitacle', name: 'Filtre habitacle', basePrice: 15, icon: Wind, desc: 'Pose (0h20)', durationHours: 0.33 },
-  { id: 'Filtre carburant', name: 'Filtre carburant', basePrice: 25, icon: Filter, desc: 'Pose (0h45)', durationHours: 0.75 },
-  { id: 'bougies', name: 'Bougies d\'allumage', basePrice: 25, icon: Zap, desc: 'Pose (0h45)', durationHours: 0.75 },
-  
-  { id: 'freinage', name: 'Freinage (Plaquettes)', basePrice: 50, icon: Disc, desc: 'Pose (1h)', durationHours: 1 },
-  { id: 'Nettoyage Etriers', name: 'Nettoyage Etriers', basePrice: 65.5, icon: Sparkles, desc: 'Main d\'oeuvre (1h15)', durationHours: 1.25 },
-  { id: 'disques_plaquettes', name: 'Disques + Plaquettes', basePrice: 75, icon: Disc, desc: 'Pose (1h30)', durationHours: 1.5 },
-  { id: 'quatre_roues', name: '4 Roues (Disques+Plaq)', basePrice: 125, icon: Disc, desc: 'Pose (2h30-3h)', durationHours: 2.75 },
-  { id: 'purge_frein', name: 'Purge liquide frein', basePrice: 40, icon: Droplet, desc: 'Main d\'oeuvre (0h45-1h)', durationHours: 0.75 },
-  
-  { id: 'Amortisseur', name: 'Amortisseur (l\'unité)', basePrice: 50, icon: Activity, desc: 'Main d\'oeuvre (1h)', durationHours: 1 },
-  { id: 'Train_avant', name: 'Train avant complet', basePrice: 100, icon: Settings, desc: 'Main d\'oeuvre (2h30)', durationHours: 2.5 },
-  { id: 'Train_arriere', name: 'Train arrière complet', basePrice: 75, icon: Settings, desc: 'Main d\'oeuvre (1h30)', durationHours: 1.5 },
-  { id: 'Bielettes', name: 'Bielettes barre stab', basePrice: 50, icon: Activity, desc: 'Main d\'oeuvre (1h)', durationHours: 1 },
-  
-  { id: 'diag', name: 'Diagnostic Valise', basePrice: 25, icon: Activity, desc: 'Lecture codes défauts', durationHours: 0.5 },
-  { id: 'Recherche', name: 'Recherche panne simple', basePrice: 50, icon: Search, desc: 'Forfait 1h', durationHours: 1 },
-  { id: 'Batterie', name: 'Changement Batterie', basePrice: 25, icon: Battery, desc: 'Pose (0h30)', durationHours: 0.5 },
-  { id: 'Alternateur', name: 'Alternateur/Démarreur', basePrice: 15, icon: Zap, desc: 'Pose (2h)', durationHours: 2 },
+  { id: 'vidange', name: 'Vidange + Filtre', basePrice: 50, icon: Droplet, desc: 'Main d\'oeuvre seule' },
+  { id: 'Filtre à air', name: 'Filtre à air', basePrice: 12.5, icon: Wind, desc: 'Pose (0h15)' },
+  { id: 'Filtre habitacle', name: 'Filtre habitacle', basePrice: 15, icon: Wind, desc: 'Pose (0h20)' },
+  { id: 'Filtre carburant', name: 'Filtre carburant', basePrice: 25, icon: Filter, desc: 'Pose (0h45)' },
+  { id: 'bougies', name: 'Bougies d\'allumage', basePrice: 25, icon: Zap, desc: 'Pose (0h45)' },
+
+  { id: 'freinage', name: 'Freinage (Plaquettes)', basePrice: 50, icon: Disc, desc: 'Pose (1h)' },
+  { id: 'Nettoyage Etriers', name: 'Nettoyage Etriers', basePrice: 65.5, icon: Sparkles, desc: 'Main d\'oeuvre (1h15)' },
+  { id: 'disques_plaquettes', name: 'Disques + Plaquettes', basePrice: 75, icon: Disc, desc: 'Pose (1h30)' },
+  { id: 'quatre_roues', name: '4 Roues (Disques+Plaq)', basePrice: 125, icon: Disc, desc: 'Pose (2h30-3h)' },
+  { id: 'purge_frein', name: 'Purge liquide frein', basePrice: 40, icon: Droplet, desc: 'Main d\'oeuvre (0h45-1h)' },
+
+  { id: 'Amortisseur', name: 'Amortisseur (l\'unité)', basePrice: 50, icon: Activity, desc: 'Main d\'oeuvre (1h)' },
+  { id: 'Train_avant', name: 'Train avant complet', basePrice: 100, icon: Settings, desc: 'Main d\'oeuvre (2h30)' },
+  { id: 'Train_arriere', name: 'Train arrière complet', basePrice: 75, icon: Settings, desc: 'Main d\'oeuvre (1h30)' },
+  { id: 'Bielettes', name: 'Bielettes barre stab', basePrice: 50, icon: Activity, desc: 'Main d\'oeuvre (1h)' },
+
+  { id: 'diag', name: 'Diagnostic Valise', basePrice: 25, icon: Activity, desc: 'Lecture codes défauts' },
+  { id: 'Recherche', name: 'Recherche panne simple', basePrice: 50, icon: Search, desc: 'Forfait 1h' },
+  { id: 'Batterie', name: 'Changement Batterie', basePrice: 25, icon: Battery, desc: 'Pose (0h30)' },
+  { id: 'Alternateur', name: 'Alternateur/Démarreur', basePrice: 15, icon: Zap, desc: 'Pose (2h)' },
 ];
 
 const Reservation = () => {
@@ -83,18 +85,15 @@ const Reservation = () => {
   const [selectedPack, setSelectedPack] = useState<string | null>('interieur_sale');
   const [selectedDetailingOptions, setSelectedDetailingOptions] = useState<string[]>([]);
   const [selectedMechanicOptions, setSelectedMechanicOptions] = useState<string[]>([]);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedTime, setSelectedTime] = useState<string | null>(null);
-  const [currentMonth, setCurrentMonth] = useState(new Date());
   const [isSuccess, setIsSuccess] = useState(false);
-  const [monthReservations, setMonthReservations] = useState<any[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({ firstName: '', lastName: '', email: '', phone: '', notes: '' });
-  
+
   // --- STATES SECURITÉ ---
   const [token, setToken] = useState<string | null>(null);
-  const [honeypot, setHoneypot] = useState(""); 
+  const [honeypot, setHoneypot] = useState("");
 
-  const totalSteps = 4;
+  const totalSteps = 3;
   const isEmailValid = (email: string) => emailRegex.test(email);
   const isPhoneValid = (phone: string) => phoneRegex.test(phone);
 
@@ -123,204 +122,79 @@ const Reservation = () => {
     return getPackPrice(selectedPack, selectedVehicle) === 0;
   }, [selectedPack, selectedVehicle]);
 
-  const totalDuration = useMemo(() => {
-    let h = detailingPacks.find(p => p.id === selectedPack)?.durationHours || 2;
-    selectedDetailingOptions.forEach(id => h += detailingOptions.find(o => o.id === id)?.durationHours || 0);
-    selectedMechanicOptions.forEach(id => h += mechanicOptions.find(o => o.id === id)?.durationHours || 0);
-    
-    if (selectedVehicle === 'suv') h *= 1.2;
-    if (selectedVehicle === 'utilitaire') h *= 1.5; 
-    
-    return Math.round(h * 2) / 2;
-  }, [selectedPack, selectedDetailingOptions, selectedMechanicOptions, selectedVehicle]);
-
-  const formatDuration = (hours: number) => {
-    const h = Math.floor(hours);
-    const m = Math.round((hours - h) * 60);
-    if (h > 8) {
-       const days = Math.ceil(h / 8); 
-       return `${days} jour${days > 1 ? 's' : ''}`; 
-    }
-    return `${h}h${m > 0 ? m : ''}`;
-  };
-
-  // --- LOGIQUE CALENDRIER ---
-  const changeMonth = (offset: number) => {
-    setCurrentMonth(prev => {
-      const newDate = new Date(prev);
-      newDate.setDate(1); 
-      newDate.setMonth(newDate.getMonth() + offset);
-      return newDate;
-    });
-    setSelectedDate(null);
-    setSelectedTime(null);
-  };
-
-  useEffect(() => {
-    const fetchMonthData = async () => {
-      const startOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
-      const endOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0, 23, 59, 59);
-      const bufferStart = new Date(startOfMonth); bufferStart.setDate(bufferStart.getDate() - 5);
-      const bufferEnd = new Date(endOfMonth); bufferEnd.setDate(bufferEnd.getDate() + 5);
-
-      const { data } = await supabase
-        .from('reservations')
-        .select('start_at, end_at')
-        .neq('status', 'cancelled')
-        .or(`start_at.lte.${bufferEnd.toISOString()},end_at.gte.${bufferStart.toISOString()}`);
-
-      setMonthReservations(data || []);
-    };
-    fetchMonthData();
-  }, [currentMonth]);
-
-  const timeSlots = useMemo(() => {
-    const slots = [];
-    for (let h = 9; h < 12; h += 0.5) slots.push(`${Math.floor(h).toString().padStart(2, '0')}:${h % 1 === 0 ? '00' : '30'}`);
-    for (let h = 14; h < 18; h += 0.5) slots.push(`${Math.floor(h).toString().padStart(2, '0')}:${h % 1 === 0 ? '00' : '30'}`);
-    return slots;
-  }, []);
-
-  const calculateEndDate = (startDate: Date, durationHours: number) => {
-    let end = new Date(startDate);
-    let remaining = durationHours;
-    
-    while (remaining > 0) {
-      end.setMinutes(end.getMinutes() + 30);
-      const h = end.getHours() + end.getMinutes() / 60;
-      const day = end.getDay();
-
-      if (day === 6 || day === 0) {
-        end.setDate(end.getDate() + (day === 6 ? 2 : 1));
-        end.setHours(9, 0, 0, 0);
-        continue;
-      }
-      if (h > 12 && h < 14) {
-        end.setHours(14, 0, 0, 0);
-        continue;
-      }
-      if (h > 18 || (h === 18 && end.getMinutes() > 0)) {
-        end.setDate(end.getDate() + 1);
-        end.setHours(9, 0, 0, 0);
-        const nextDay = end.getDay();
-        if (nextDay === 6 || nextDay === 0) {
-            end.setDate(end.getDate() + (nextDay === 6 ? 2 : 1));
-        }
-        continue;
-      }
-      remaining -= 0.5;
-    }
-    return end;
-  };
-
-  const isRangeAvailable = (start: Date, end: Date) => {
-    for (const res of monthReservations) {
-      const resStart = new Date(res.start_at);
-      const resEnd = new Date(res.end_at);
-      if (start < resEnd && end > resStart) return false;
-    }
-    return true;
-  };
-
-  const isDayAvailable = (date: Date) => {
-    const today = new Date(); today.setHours(0,0,0,0);
-    if (date < today || date.getDay() === 0 || date.getDay() === 6) return false;
-
-    const slotsToCheck = [];
-    for (let h = 9; h < 12; h += 0.5) slotsToCheck.push(h);
-    for (let h = 14; h < 18; h += 0.5) slotsToCheck.push(h);
-
-    return slotsToCheck.some(h => {
-      const simStart = new Date(date);
-      simStart.setHours(Math.floor(h), (h % 1) * 60, 0, 0);
-      const simEnd = calculateEndDate(simStart, totalDuration);
-      return isRangeAvailable(simStart, simEnd);
-    });
-  };
-
   const handleSubmit = async () => {
     if (!token) {
-        toast.error("Veuillez valider la sécurité anti-robot.");
-        return;
+      toast.error("Veuillez valider la sécurité anti-robot.");
+      return;
     }
 
     if (honeypot) {
-        console.log("Honeypot triggered");
-        setIsSuccess(true);
-        return;
+      console.log("Honeypot triggered");
+      setIsSuccess(true);
+      return;
     }
 
-    if (!selectedDate || !selectedTime) return;
-    const startDate = new Date(selectedDate);
-    const [h, m] = selectedTime.split(':').map(Number);
-    startDate.setHours(h, m, 0, 0);
-    const endDate = calculateEndDate(startDate, totalDuration);
+    setIsSubmitting(true);
 
-    const { data, error } = await supabase.rpc('reserve_multi_day', {
-      p_client_name: `${formData.firstName} ${formData.lastName}`,
-      p_client_email: formData.email,
-      p_client_phone: formData.phone || null,
-      p_start_at: startDate.toISOString(),
-      p_end_at: endDate.toISOString(),
-      p_service_name: detailingPacks.find(p => p.id === selectedPack)?.name || "Détailing",
-      p_total_price: isSurDevis ? 0 : calculateTotal(),
-      p_duration: totalDuration,
-      p_vehicle_info: { type: selectedVehicle, label: vehicleTypes.find(v => v.id === selectedVehicle)?.name },
-      p_service_details: { pack: selectedPack, detailing_options: selectedDetailingOptions, mechanic_options: selectedMechanicOptions, notes: formData.notes, is_sur_devis: isSurDevis }
+    const detailingOptionNames = selectedDetailingOptions
+      .map(id => detailingOptions.find(o => o.id === id)?.name)
+      .filter(Boolean);
+    const mechanicOptionNames = selectedMechanicOptions
+      .map(id => mechanicOptions.find(o => o.id === id)?.name)
+      .filter(Boolean);
+
+    const { error } = await supabase.functions.invoke('send-quote-request', {
+      body: {
+        name: `${formData.firstName} ${formData.lastName}`,
+        email: formData.email,
+        phone: formData.phone,
+        vehicle_label: vehicleTypes.find(v => v.id === selectedVehicle)?.name,
+        service_name: detailingPacks.find(p => p.id === selectedPack)?.name,
+        detailing_options: detailingOptionNames,
+        mechanic_options: mechanicOptionNames,
+        total_price: calculateTotal(),
+        is_sur_devis: isSurDevis,
+        notes: formData.notes,
+        token,
+      }
     });
 
-    if (error || (data && data.error)) {
-      toast.error(data?.error || "Erreur de connexion.");
-      const { data: newData } = await supabase.from('reservations').select('start_at, end_at').neq('status', 'cancelled');
-      if (newData) setMonthReservations(newData);
-    } else {
-      
-      const reservationData = {
-        client_name: `${formData.firstName} ${formData.lastName}`,
-        client_email: formData.email,
-        client_phone: formData.phone,
-        start_at: startDate.toISOString(),
-        service_name: detailingPacks.find(p => p.id === selectedPack)?.name,
-        total_price: isSurDevis ? 0 : calculateTotal(),
-        duration_hours: totalDuration,
-        vehicle_info: { label: vehicleTypes.find(v => v.id === selectedVehicle)?.name },
-        service_details: { notes: formData.notes }
-      };
+    setIsSubmitting(false);
 
-      supabase.functions.invoke('manage-reservation', {
-        body: { type: 'create', record: reservationData, token }
-      });
-
-      setIsSuccess(true);
-      toast.success("Réservation effectuée ! Un email vous a été envoyé.");
+    if (error) {
+      console.error("Erreur:", error);
+      toast.error("Une erreur est survenue. Vous pouvez aussi nous appeler directement.");
+      return;
     }
+
+    setIsSuccess(true);
+    toast.success("Demande envoyée ! Un email de confirmation vous a été transmis.");
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const isFormValid = 
+  const isFormValid =
     formData.firstName.length >= 2 &&
     formData.lastName.length >= 2 &&
     isEmailValid(formData.email) &&
-    isPhoneValid(formData.phone); 
-    
+    isPhoneValid(formData.phone);
+
   const canProceed = () => {
     if (step === 1) return selectedVehicle !== null;
     if (step === 2) return selectedPack !== null;
-    if (step === 3) return selectedDate !== null && selectedTime !== null;
     return true;
   };
 
   return (
     <>
-      <SeoHead 
-        title="Réserver votre prestation en ligne"
-        description="Choisissez votre formule et votre créneau en ligne. Réservation simple et rapide pour l'entretien esthétique de votre véhicule."
+      <SeoHead
+        title="Demander un devis en ligne"
+        description="Choisissez votre formule et obtenez une estimation immédiate. Nous vous recontactons rapidement pour fixer un rendez-vous, ou appelez-nous directement."
         canonicalUrl="https://www.saphirdetailing.fr/reservation"
       />
-      
+
       <div className="flex flex-col min-h-screen">
         {/* Hero */}
         <section className="pt-32 pb-8 relative overflow-hidden flex-shrink-0">
@@ -328,31 +202,39 @@ const Reservation = () => {
           <div className="container px-4 md:px-6 relative">
             <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="text-center max-w-3xl mx-auto">
               <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-card border border-white/10 text-sm text-primary mb-6">
-                <CalendarIcon className="w-4 h-4" /> Réservation en ligne
+                <CalendarIcon className="w-4 h-4" /> Demande de devis
               </span>
               <h1 className="font-display text-4xl sm:text-5xl md:text-7xl font-bold mb-6 text-white tracking-tight leading-tight">
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-primary to-gray-400">Réservez <br /></span> Votre Créneau
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-primary to-gray-400">Estimez <br /></span> Votre Prestation
               </h1>
+              <p className="text-gray-400 max-w-xl mx-auto mb-2">
+                Composez votre prestation et recevez une estimation immédiate. Nous vous recontactons rapidement pour fixer un créneau.
+              </p>
+              <a href={PHONE_HREF} className="inline-flex items-center gap-2 text-primary font-bold hover:text-white transition-colors mt-2">
+                <Phone className="w-4 h-4" /> Ou appelez-nous directement au {PHONE_NUMBER}
+              </a>
             </motion.div>
           </div>
         </section>
 
         {/* Progress Bar */}
-        <div className="sticky top-20 z-30 bg-background/80 backdrop-blur-xl border-b border-border flex-shrink-0">
-          <div className="container px-4 md:px-6 py-4">
-            <div className="flex items-center justify-between max-w-2xl mx-auto">
-              {['Véhicule', 'Prestations', 'Date', 'Confirmation'].map((label, index) => (
-                <div key={label} className="flex items-center">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${step > index + 1 ? 'bg-primary text-primary-foreground' : step === index + 1 ? 'bg-primary text-primary-foreground shadow-glow' : 'bg-secondary text-muted-foreground'}`}>
-                    {step > index + 1 ? <Check className="w-4 h-4" /> : index + 1}
+        {!isSuccess && (
+          <div className="sticky top-20 z-30 bg-background/80 backdrop-blur-xl border-b border-border flex-shrink-0">
+            <div className="container px-4 md:px-6 py-4">
+              <div className="flex items-center justify-between max-w-2xl mx-auto">
+                {['Véhicule', 'Prestations', 'Coordonnées'].map((label, index) => (
+                  <div key={label} className="flex items-center">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${step > index + 1 ? 'bg-primary text-primary-foreground' : step === index + 1 ? 'bg-primary text-primary-foreground shadow-glow' : 'bg-secondary text-muted-foreground'}`}>
+                      {step > index + 1 ? <Check className="w-4 h-4" /> : index + 1}
+                    </div>
+                    <span className={`hidden sm:block ml-2 text-sm ${step === index + 1 ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>{label}</span>
+                    {index < 2 && <div className={`hidden sm:block w-12 h-px mx-4 ${step > index + 1 ? 'bg-primary' : 'bg-border'}`} />}
                   </div>
-                  <span className={`hidden sm:block ml-2 text-sm ${step === index + 1 ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>{label}</span>
-                  {index < 3 && <div className={`hidden sm:block w-12 h-px mx-4 ${step > index + 1 ? 'bg-primary' : 'bg-border'}`} />}
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Main Content */}
         <section className="py-12 flex-grow">
@@ -366,9 +248,13 @@ const Reservation = () => {
                       <Check className="w-12 h-12 text-white" strokeWidth={3} />
                     </div>
                   </div>
-                  <h2 className="text-4xl md:text-5xl font-display font-black text-white mb-6">DEMANDE <span className="text-primary">ENREGISTRÉE</span></h2>
-                  <p className="text-gray-400 text-lg mb-10 leading-relaxed">
-                    Merci <span className="text-white font-bold">{formData.firstName}</span>. Votre demande pour le <span className="text-white font-bold">{selectedDate && new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long' }).format(selectedDate)}</span> est bien arrivée.
+                  <h2 className="text-4xl md:text-5xl font-display font-black text-white mb-6">DEMANDE <span className="text-primary">ENVOYÉE</span></h2>
+                  <p className="text-gray-400 text-lg mb-4 leading-relaxed">
+                    Merci <span className="text-white font-bold">{formData.firstName}</span>. Nous avons bien reçu votre demande et revenons vers vous rapidement pour convenir d'un créneau.
+                  </p>
+                  <p className="text-gray-500 mb-10">
+                    Besoin d'une réponse immédiate ?{' '}
+                    <a href={PHONE_HREF} className="text-primary font-bold hover:text-white transition-colors">Appelez-nous au {PHONE_NUMBER}</a>
                   </p>
                   <button onClick={() => window.location.href = '/'} className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors font-bold">Retour à l'accueil <ArrowRight className="w-4 h-4" /></button>
                 </motion.div>
@@ -468,96 +354,21 @@ const Reservation = () => {
                     </motion.div>
                   )}
 
-                  {/* STEP 3: DATE */}
+                  {/* STEP 3: COORDONNÉES & ENVOI */}
                   {step === 3 && (
-                    <motion.div key="step3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="max-w-5xl mx-auto pb-10">
-                      <h2 className="text-3xl font-bold font-display text-white text-center mb-8">Planning</h2>
-                      <div className="flex flex-col md:flex-row gap-6 items-stretch">
-                        <div className="w-full md:w-3/5 bg-[#0f0f0f] border border-white/10 rounded-3xl p-6 flex flex-col">
-                          <div className="flex items-center justify-between mb-6">
-                            <span className="text-lg font-bold capitalize text-white pl-2">{new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' }).format(currentMonth)}</span>
-                            <div className="flex gap-2">
-                              <button onClick={() => changeMonth(-1)} className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-white"><ChevronLeft className="w-4 h-4"/></button>
-                              <button onClick={() => changeMonth(1)} className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-white"><ChevronRight className="w-4 h-4"/></button>
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-7 mb-2 text-center text-xs font-bold text-gray-500 py-2">{['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((d, i) => <div key={i}>{d}</div>)}</div>
-                          <div className="grid grid-cols-7 gap-1 sm:gap-2 content-start">
-                            {(() => {
-                              const year = currentMonth.getFullYear();
-                              const month = currentMonth.getMonth();
-                              const firstDay = new Date(year, month, 1).getDay();
-                              const daysInMonth = new Date(year, month + 1, 0).getDate();
-                              const startDay = firstDay === 0 ? 6 : firstDay - 1;
-                              const days = [];
-                              for (let i = 0; i < startDay; i++) days.push(<div key={`empty-${i}`} className="w-full aspect-square" />);
-                              for (let d = 1; d <= daysInMonth; d++) {
-                                const dateObj = new Date(year, month, d);
-                                const isSelected = selectedDate?.toDateString() === dateObj.toDateString();
-                                const isAvailable = isDayAvailable(dateObj);
-                                days.push(
-                                  <button key={d} disabled={!isAvailable} onClick={() => { setSelectedDate(dateObj); setSelectedTime(null); }} className={`w-full aspect-square rounded-xl flex items-center justify-center text-sm font-medium transition-all ${isSelected ? 'bg-primary text-white shadow-glow' : !isAvailable ? 'text-gray-700 cursor-not-allowed opacity-50 bg-white/[0.01]' : 'text-gray-300 hover:bg-white/10 bg-white/[0.02]'}`}>
-                                    {d}
-                                  </button>
-                                );
-                              }
-                              return days;
-                            })()}
-                          </div>
-                        </div>
-                        <div className="w-full md:w-2/5 bg-[#0f0f0f] border border-white/10 rounded-3xl p-6 flex flex-col">
-                          <h3 className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-4">Date : {selectedDate ? new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }).format(selectedDate) : 'Aucune'}</h3>
-                          <div className="flex-1 overflow-y-auto min-h-[300px]">
-                            {selectedDate ? (
-                              <div className="grid grid-cols-3 gap-2">
-                                {timeSlots.map((time) => {
-                                  const [h, m] = time.split(':').map(Number);
-                                  const slotStart = new Date(selectedDate); slotStart.setHours(h, m, 0, 0);
-                                  const slotEnd = calculateEndDate(slotStart, totalDuration);
-                                  const isAvailable = isRangeAvailable(slotStart, slotEnd);
-                                  return (
-                                    <button key={time} disabled={!isAvailable} onClick={() => setSelectedTime(time)} className={`py-2 rounded-lg text-xs font-bold border transition-all ${selectedTime === time ? 'bg-primary border-primary text-black' : isAvailable ? 'bg-white/5 border-white/10 text-white hover:border-primary/50' : 'opacity-20 cursor-not-allowed border-red-900/50 text-red-900'}`}>
-                                      {time}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            ) : <p className="text-center text-gray-600 mt-10">Veuillez choisir une date.</p>}
-                          </div>
-                          
-                          <div className="mt-4 pt-4 border-t border-white/10">
-                            <div className="flex items-center justify-between bg-white/[0.03] p-3 rounded-xl border border-white/5">
-                                <div className="flex items-center gap-2 text-gray-400">
-                                  <Clock className="w-4 h-4" />
-                                  <span className="text-xs font-medium">Durée estimée</span>
-                                </div>
-                                <div className="text-right">
-                                  <span className="text-sm font-bold text-white block">{formatDuration(totalDuration)}</span>
-                                  <span className="text-[9px] text-gray-600 uppercase tracking-wide block">Indicatif</span>
-                                </div>
-                            </div>
-                          </div>
-
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-
-                  {/* STEP 4: RECAP & CONFIRMATION */}
-                  {step === 4 && (
-                    <motion.div key="step4" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="max-w-6xl mx-auto pb-10">
+                    <motion.div key="step3" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="max-w-6xl mx-auto pb-10">
                       <h2 className="text-3xl font-bold font-display text-white text-center mb-10">Finalisation</h2>
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
                         <div className="flex flex-col">
                           <div className="bg-[#0f0f0f] border border-white/10 rounded-3xl p-6 md:p-8 h-full">
                             <div className="flex items-center justify-between mb-6">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-primary/20 rounded-lg text-primary"><User className="w-5 h-5" /></div>
-                                    <h3 className="text-xl font-bold text-white">Vos Coordonnées</h3>
-                                </div>
-                                <span className="text-xs text-gray-500 font-medium">* Champs obligatoires</span>
+                              <div className="flex items-center gap-3">
+                                <div className="p-2 bg-primary/20 rounded-lg text-primary"><User className="w-5 h-5" /></div>
+                                <h3 className="text-xl font-bold text-white">Vos Coordonnées</h3>
+                              </div>
+                              <span className="text-xs text-gray-500 font-medium">* Champs obligatoires</span>
                             </div>
-                            
+
                             <div className="space-y-6 relative">
                               {/* --- HONEYPOT FIELD --- */}
                               <div
@@ -578,39 +389,39 @@ const Reservation = () => {
 
                               <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Prénom <span className="text-primary">*</span></label>
-                                    <input 
-                                      type="text" 
-                                      name="firstName" 
-                                      value={formData.firstName} 
-                                      onChange={handleInputChange} 
-                                      placeholder="Jean" 
-                                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-primary outline-none transition-all placeholder:text-gray-600" 
-                                    />
+                                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Prénom <span className="text-primary">*</span></label>
+                                  <input
+                                    type="text"
+                                    name="firstName"
+                                    value={formData.firstName}
+                                    onChange={handleInputChange}
+                                    placeholder="Jean"
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-primary outline-none transition-all placeholder:text-gray-600"
+                                  />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Nom <span className="text-primary">*</span></label>
-                                    <input 
-                                      type="text" 
-                                      name="lastName" 
-                                      value={formData.lastName} 
-                                      onChange={handleInputChange} 
-                                      placeholder="Dupont" 
-                                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-primary outline-none transition-all placeholder:text-gray-600" 
-                                    />
+                                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Nom <span className="text-primary">*</span></label>
+                                  <input
+                                    type="text"
+                                    name="lastName"
+                                    value={formData.lastName}
+                                    onChange={handleInputChange}
+                                    placeholder="Dupont"
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-primary outline-none transition-all placeholder:text-gray-600"
+                                  />
                                 </div>
                               </div>
-                              
+
                               <div className="space-y-1.5 relative">
                                 <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Email <span className="text-primary">*</span></label>
-                                <input 
-                                  type="email" 
-                                  name="email" 
-                                  value={formData.email} 
-                                  onChange={handleInputChange} 
-                                  placeholder="jean.dupont@email.com" 
+                                <input
+                                  type="email"
+                                  name="email"
+                                  value={formData.email}
+                                  onChange={handleInputChange}
+                                  placeholder="jean.dupont@email.com"
                                   className={`w-full bg-white/5 border rounded-xl px-4 py-3 text-white focus:outline-none transition-all placeholder:text-gray-600
-                                    ${formData.email && !isEmailValid(formData.email) ? 'border-red-500 focus:border-red-500' : formData.email && isEmailValid(formData.email) ? 'border-green-500/50 focus:border-green-500' : 'border-white/10 focus:border-primary'}`} 
+                                    ${formData.email && !isEmailValid(formData.email) ? 'border-red-500 focus:border-red-500' : formData.email && isEmailValid(formData.email) ? 'border-green-500/50 focus:border-green-500' : 'border-white/10 focus:border-primary'}`}
                                 />
                                 {formData.email && !isEmailValid(formData.email) && (
                                   <span className="text-[10px] text-red-400 absolute right-3 top-9">Format invalide</span>
@@ -619,14 +430,14 @@ const Reservation = () => {
 
                               <div className="space-y-1.5 relative">
                                 <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Téléphone <span className="text-primary">*</span></label>
-                                <input 
-                                  type="tel" 
-                                  name="phone" 
-                                  value={formData.phone} 
-                                  onChange={handleInputChange} 
-                                  placeholder="06 12 34 56 78" 
+                                <input
+                                  type="tel"
+                                  name="phone"
+                                  value={formData.phone}
+                                  onChange={handleInputChange}
+                                  placeholder="06 12 34 56 78"
                                   className={`w-full bg-white/5 border rounded-xl px-4 py-3 text-white focus:outline-none transition-all placeholder:text-gray-600
-                                    ${formData.phone && !isPhoneValid(formData.phone) ? 'border-red-500 focus:border-red-500' : formData.phone && isPhoneValid(formData.phone) ? 'border-green-500/50 focus:border-green-500' : 'border-white/10 focus:border-primary'}`} 
+                                    ${formData.phone && !isPhoneValid(formData.phone) ? 'border-red-500 focus:border-red-500' : formData.phone && isPhoneValid(formData.phone) ? 'border-green-500/50 focus:border-green-500' : 'border-white/10 focus:border-primary'}`}
                                 />
                                 {formData.phone && !isPhoneValid(formData.phone) && (
                                   <span className="text-[10px] text-red-400 absolute right-3 top-9">Format invalide</span>
@@ -635,41 +446,32 @@ const Reservation = () => {
 
                               <div className="space-y-1.5">
                                 <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Message (Optionnel)</label>
-                                <textarea 
-                                  name="notes" 
-                                  value={formData.notes} 
-                                  onChange={handleInputChange} 
-                                  placeholder="Précisions sur l'état du véhicule, code d'accès..." 
-                                  rows={3} 
-                                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-primary outline-none resize-none placeholder:text-gray-600" 
+                                <textarea
+                                  name="notes"
+                                  value={formData.notes}
+                                  onChange={handleInputChange}
+                                  placeholder="Précisions sur l'état du véhicule, disponibilités..."
+                                  rows={3}
+                                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-primary outline-none resize-none placeholder:text-gray-600"
                                 />
                               </div>
                             </div>
+
+                            {/* --- BOUTON APPEL DIRECT --- */}
+                            <a
+                              href={PHONE_HREF}
+                              className="mt-6 flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-white/10 text-gray-300 hover:border-primary/50 hover:text-primary transition-all font-medium"
+                            >
+                              <Phone className="w-4 h-4" /> Ou appelez-nous directement au {PHONE_NUMBER}
+                            </a>
                           </div>
                         </div>
                         <div className="flex flex-col">
                           <div className="bg-[#0f0f0f] border border-white/10 rounded-3xl p-8 h-full flex flex-col justify-between">
                             <div>
-                              <h3 className="text-xl font-bold font-display text-white mb-6 flex items-center gap-3"><span className="w-1.5 h-6 bg-primary rounded-full"/> Récapitulatif</h3>
+                              <h3 className="text-xl font-bold font-display text-white mb-6 flex items-center gap-3"><span className="w-1.5 h-6 bg-primary rounded-full" /> Récapitulatif</h3>
                               <div className="space-y-4">
                                 <div className="flex items-start gap-4 p-4 rounded-2xl bg-white/5 border border-white/5"><div className="p-2 bg-black rounded-lg border border-white/10 text-gray-400"><CarFront className="w-5 h-5" /></div><div><p className="text-xs text-gray-500 uppercase tracking-wider font-bold">Véhicule</p><p className="text-white font-bold">{vehicleTypes.find(v => v.id === selectedVehicle)?.name}</p></div></div>
-                                
-                                <div className="flex items-start gap-4 p-4 rounded-2xl bg-white/5 border border-white/5">
-                                  <div className="p-2 bg-black rounded-lg border border-white/10 text-gray-400"><CalendarIcon className="w-5 h-5" /></div>
-                                  <div className="flex-1">
-                                    <div className="flex justify-between items-start">
-                                      <div>
-                                        <p className="text-xs text-gray-500 uppercase tracking-wider font-bold">Date & Heure</p>
-                                        <p className="text-white font-bold capitalize">{selectedDate ? new Intl.DateTimeFormat('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }).format(selectedDate) : '--'}</p>
-                                        <p className="text-primary text-sm font-medium">à {selectedTime || '--:--'}</p>
-                                      </div>
-                                      <div className="text-right">
-                                        <p className="text-xs text-gray-500 uppercase tracking-wider font-bold">Durée Est.</p>
-                                        <p className="text-white font-bold">{formatDuration(totalDuration)}</p>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
 
                                 <div className="border-t border-white/10 border-dashed my-2" />
                                 <div className="space-y-2">
@@ -681,31 +483,31 @@ const Reservation = () => {
                                   {selectedMechanicOptions.map(id => <div key={id} className="flex justify-between text-sm text-gray-400"><span>+ {mechanicOptions.find(o => o.id === id)?.name}</span><span>{mechanicOptions.find(o => o.id === id)?.basePrice}€</span></div>)}
                                 </div>
                                 <div className="flex justify-between items-end mt-6 pt-4 border-t border-white/10">
-                                    <div>
-                                        <span className="text-gray-400 font-medium block">Total estimé</span>
-                                        <span className="text-[10px] text-gray-500">* Prix minimum indicatif</span>
-                                    </div>
-                                    <span className="text-4xl font-bold text-primary tracking-tight">{isSurDevis ? 'Sur Devis' : calculateTotal() + '€'}</span>
+                                  <div>
+                                    <span className="text-gray-400 font-medium block">Total estimé</span>
+                                    <span className="text-[10px] text-gray-500">* Prix minimum indicatif, hors délai</span>
+                                  </div>
+                                  <span className="text-4xl font-bold text-primary tracking-tight">{isSurDevis ? 'Sur Devis' : calculateTotal() + '€'}</span>
                                 </div>
                               </div>
                             </div>
 
                             {/* --- WIDGET CLOUDFLARE TURNSTILE --- */}
                             <div className="mt-6">
-                                <Turnstile 
-                                    siteKey="0x4AAAAAACWcVeXiRR2a7qKa" 
-                                    onSuccess={(token) => setToken(token)}
-                                    theme="dark"
-                                />
+                              <Turnstile
+                                siteKey="0x4AAAAAACWcVeXiRR2a7qKa"
+                                onSuccess={(token) => setToken(token)}
+                                theme="dark"
+                              />
                             </div>
 
-                            <button 
-                                type="button" 
-                                onClick={handleSubmit} 
-                                disabled={!isFormValid || !token} 
-                                className={`w-full py-4 rounded-xl font-black text-lg transition-all flex items-center justify-center gap-3 mt-4 ${isFormValid && token ? 'bg-primary text-white shadow-glow hover:scale-[1.02]' : 'bg-white/10 text-gray-500 cursor-not-allowed'}`}
+                            <button
+                              type="button"
+                              onClick={handleSubmit}
+                              disabled={!isFormValid || !token || isSubmitting}
+                              className={`w-full py-4 rounded-xl font-black text-lg transition-all flex items-center justify-center gap-3 mt-4 disabled:cursor-not-allowed ${isFormValid && token && !isSubmitting ? 'bg-primary text-white shadow-glow hover:scale-[1.02]' : 'bg-white/10 text-gray-500'}`}
                             >
-                                {isFormValid && token ? <>CONFIRMER <Check className="w-6 h-6" /></> : 'VALIDER LE CAPTCHA'}
+                              {isSubmitting ? 'Envoi en cours...' : isFormValid && token ? <>ENVOYER LA DEMANDE <Check className="w-6 h-6" /></> : 'VALIDER LE CAPTCHA'}
                             </button>
                           </div>
                         </div>
@@ -719,20 +521,22 @@ const Reservation = () => {
         </section>
 
         {/* BOTTOM NAV */}
-        <div className="sticky bottom-0 z-50 bg-background/80 backdrop-blur-xl border-t border-border py-4 w-full flex-shrink-0">
-          <div className="container px-4 md:px-6 flex justify-between max-w-2xl mx-auto">
-            <button onClick={() => setStep(s => Math.max(1, s - 1))} disabled={step === 1} className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-colors ${step === 1 ? 'opacity-0' : 'text-foreground hover:bg-secondary'}`}><ChevronLeft className="w-5 h-5" /> Retour</button>
-            {step < 4 && (
-              <div className="text-center">
-                <span className="text-sm text-muted-foreground">Total</span>
-                <span className="block text-xl font-bold text-primary">{isSurDevis ? 'Devis' : calculateTotal() + '€'}</span>
-              </div>
-            )}
-            {step < 4 ? (
-              <button onClick={() => setStep(s => Math.min(totalSteps, s + 1))} disabled={!canProceed()} className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all ${canProceed() ? 'bg-primary text-white shadow-glow' : 'bg-secondary text-muted-foreground'}`}>Continuer <ChevronRight className="w-5 h-5" /></button>
-            ) : <div className="w-[120px]" />}
+        {!isSuccess && (
+          <div className="sticky bottom-0 z-50 bg-background/80 backdrop-blur-xl border-t border-border py-4 w-full flex-shrink-0">
+            <div className="container px-4 md:px-6 flex justify-between max-w-2xl mx-auto">
+              <button onClick={() => setStep(s => Math.max(1, s - 1))} disabled={step === 1} className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-colors ${step === 1 ? 'opacity-0' : 'text-foreground hover:bg-secondary'}`}><ChevronLeft className="w-5 h-5" /> Retour</button>
+              {step < 3 && (
+                <div className="text-center">
+                  <span className="text-sm text-muted-foreground">Total</span>
+                  <span className="block text-xl font-bold text-primary">{isSurDevis ? 'Devis' : calculateTotal() + '€'}</span>
+                </div>
+              )}
+              {step < 3 ? (
+                <button onClick={() => setStep(s => Math.min(totalSteps, s + 1))} disabled={!canProceed()} className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all ${canProceed() ? 'bg-primary text-white shadow-glow' : 'bg-secondary text-muted-foreground'}`}>Continuer <ChevronRight className="w-5 h-5" /></button>
+              ) : <div className="w-[120px]" />}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </>
   );
