@@ -560,16 +560,19 @@ const Reservation = () => {
                             
                             <div className="space-y-6 relative">
                               {/* --- HONEYPOT FIELD --- */}
-                              <div className="absolute opacity-0 -z-50 select-none pointer-events-none h-0 w-0 overflow-hidden">
-                                <label htmlFor="confirm_email_res">Ne pas remplir</label>
+                              <div
+                                aria-hidden="true"
+                                style={{ position: 'absolute', left: '-9999px', top: '-9999px', width: '1px', height: '1px', overflow: 'hidden' }}
+                              >
+                                <label htmlFor="hp_field_res_7k1">Laissez ce champ vide</label>
                                 <input
-                                    type="text"
-                                    id="confirm_email_res"
-                                    name="confirm_email"
-                                    tabIndex={-1}
-                                    autoComplete="off"
-                                    value={honeypot}
-                                    onChange={(e) => setHoneypot(e.target.value)}
+                                  type="text"
+                                  id="hp_field_res_7k1"
+                                  name="hp_field_res_7k1"
+                                  tabIndex={-1}
+                                  autoComplete="new-password"
+                                  value={honeypot}
+                                  onChange={(e) => setHoneypot(e.target.value)}
                                 />
                               </div>
 
