@@ -13,7 +13,7 @@ const phoneRegex = /^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$/;
 const Contact = () => {
   const [formStatus, setFormStatus] = useState<'idle' | 'loading' | 'success'>('idle');
   const [token, setToken] = useState<string | null>(null);
-  const [honeypot, setHoneypot] = useState(""); 
+  const [honeypot, setHoneypot] = useState("");
 
   const [formData, setFormData] = useState({
     name: '',
@@ -217,17 +217,20 @@ const Contact = () => {
                   <form onSubmit={handleSubmit} className="flex-1 flex flex-col justify-between gap-6">
                     
                     {/* HONEYPOT */}
-                    <div className="absolute opacity-0 -z-50 select-none pointer-events-none h-0 w-0 overflow-hidden">
-                        <label htmlFor="confirm_email">Ne pas remplir ce champ si vous êtes humain</label>
-                        <input
-                            type="text"
-                            name="confirm_email"
-                            id="confirm_email"
-                            tabIndex={-1}
-                            autoComplete="off"
-                            value={honeypot}
-                            onChange={(e) => setHoneypot(e.target.value)}
-                        />
+                    <div
+                      aria-hidden="true"
+                      style={{ position: 'absolute', left: '-9999px', top: '-9999px', width: '1px', height: '1px', overflow: 'hidden' }}
+                    >
+                      <label htmlFor="hp_field_9x2">Laissez ce champ vide</label>
+                      <input
+                        type="text"
+                        name="hp_field_9x2"
+                        id="hp_field_9x2"
+                        tabIndex={-1}
+                        autoComplete="new-password"
+                        value={honeypot}
+                        onChange={(e) => setHoneypot(e.target.value)}
+                      />
                     </div>
 
                     <div className="grid sm:grid-cols-2 gap-5">
